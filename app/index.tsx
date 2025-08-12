@@ -1,15 +1,17 @@
-import { Text, View } from "react-native";
+import { useEffect } from 'react';
+import { useRouter } from 'expo-router';
+import { InteractionManager } from 'react-native';
 
 export default function Index() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Edit app/index.tsx to edit this screen.</Text>
-    </View>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      router.replace('/intro');  // 여기를 '/intro'로 변경
+    });
+
+    return () => task.cancel();
+  }, []);
+
+  return null;
 }
