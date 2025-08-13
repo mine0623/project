@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 export default function ProfileSettings() {
     const [selectedTab, setSelectedTab] = useState("전체");
@@ -11,7 +12,7 @@ export default function ProfileSettings() {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.logo}>mine</Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push('/search')}>
                     <Ionicons name="search" size={25} color="#f0f0e5" />
                 </TouchableOpacity>
             </View>
@@ -80,7 +81,7 @@ export default function ProfileSettings() {
                             <View style={styles.underline}></View>
                         </View>
 
-                         <View style={styles.post}>
+                        <View style={styles.post}>
                             <View>
                                 <View style={styles.postHeader}>
                                     <TouchableOpacity style={styles.profile}>
