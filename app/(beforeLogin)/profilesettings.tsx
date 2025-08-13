@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function Profilesettings() {
     const [name, setName] = useState("");
@@ -12,8 +13,11 @@ export default function Profilesettings() {
         <SafeAreaView style={styles.background}>
             <View style={styles.container}>
                 <Text style={styles.text}>Profile Settings</Text>
-                <View style={styles.inputs}>
-                    <Text style={styles.inputText}>name</Text>
+                <TouchableOpacity style={styles.profileImg}>
+                    <Ionicons name="person-circle-sharp" size={150} color="#f0f0e5" />
+                </TouchableOpacity>
+                <View style={styles.frame}>
+                    <Text style={styles.title}>name</Text>
                     <TextInput
                         style={styles.input}
                         placeholder="name"
@@ -25,8 +29,8 @@ export default function Profilesettings() {
                         value={name}
                     />
                 </View>
-                <View style={styles.inputs}>
-                    <Text style={styles.inputText}>gender</Text>
+                <View style={styles.frame}>
+                    <Text style={styles.title}>gender</Text>
                     <View style={styles.genders}>
                         {genders.map((gender) => (
                             <TouchableOpacity
@@ -49,8 +53,8 @@ export default function Profilesettings() {
                         ))}
                     </View>
                 </View>
-                <View style={styles.inputs}>
-                    <Text style={styles.inputText}>age</Text>
+                <View style={styles.frame}>
+                    <Text style={styles.title}>age</Text>
                     {/* 년 월 일 */}
                 </View>
                 <TouchableOpacity onPress={() => router.replace('/post')}>
@@ -76,13 +80,16 @@ const styles = StyleSheet.create({
         fontSize: 30,
         fontWeight: 'bold',
     },
-    inputText: {
+    title: {
         color: '#f0f0e5',
         fontSize: 25,
         fontWeight: 'bold',
     },
-    inputs: {
+    frame: {
         gap: 10,
+    },
+    profileImg: {
+        margin: 'auto'
     },
     input: {
         color: '#f0f0e5',

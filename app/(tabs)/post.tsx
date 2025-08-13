@@ -40,11 +40,92 @@ export default function ProfileSettings() {
                 ))}
             </View>
 
-            {/* 탭별 콘텐츠 */}
-            <View style={styles.contentContainer}>
-                {selectedTab === "전체" && <Text style={styles.contentText}>전체 내용</Text>}
-                {selectedTab === "추천" && <Text style={styles.contentText}>추천 내용</Text>}
-                {selectedTab === "질문" && <Text style={styles.contentText}>질문 내용</Text>}
+            <View>
+                {selectedTab === "전체" &&
+                    <>
+                        <View style={styles.post}>
+                            <View>
+                                <View style={styles.postHeader}>
+                                    <TouchableOpacity style={styles.profile}>
+                                        <Ionicons name="person-circle-sharp" size={35} color="#bcb8b1" />
+                                        <Text style={styles.name}>안미네미네짱</Text>
+                                    </TouchableOpacity>
+                                    <Text style={styles.time}>1시간 전</Text>
+                                </View>
+                                <View style={styles.tool}>
+                                    <View style={styles.articles}>
+                                        <Text style={styles.title}>주말에 데이트..</Text>
+                                        <Text style={styles.text}>뭐 입을까요? 심플하고 이쁜고</Text>
+                                        <View style={styles.tags}>
+                                            <Text style={styles.tag}>#질문</Text>
+                                            <Text style={styles.tag}>#추천</Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+                            <View style={styles.icons}>
+                                <View style={styles.icon}>
+                                    <TouchableOpacity>
+                                        <Ionicons name="heart" size={27} color="#e5c1bd" />
+                                    </TouchableOpacity>
+                                    <Text style={styles.count}>10</Text>
+                                </View>
+                                <View style={styles.icon}>
+                                    <TouchableOpacity>
+                                        <Ionicons name="chatbox" size={27} color="#dfc8ba" />
+                                    </TouchableOpacity>
+                                    <Text style={styles.count}>5</Text>
+                                </View>
+                            </View>
+                            <View style={styles.underline}></View>
+                        </View>
+
+                         <View style={styles.post}>
+                            <View>
+                                <View style={styles.postHeader}>
+                                    <TouchableOpacity style={styles.profile}>
+                                        <Ionicons name="person-circle-sharp" size={35} color="#bcb8b1" />
+                                        <Text style={styles.name}>안미네미네짱</Text>
+                                    </TouchableOpacity>
+                                    <Text style={styles.time}>1시간 전</Text>
+                                </View>
+                                <View style={styles.tool}>
+                                    <View style={styles.articles}>
+                                        <Text style={styles.title}>주말에 데이트..</Text>
+                                        <Text style={styles.text}>이 조합들</Text>
+                                        <View style={styles.tags}>
+                                            <Text style={styles.tag}>#질문</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.img}></View>
+                                </View>
+                            </View>
+                            <View style={styles.icons}>
+                                <View style={styles.icon}>
+                                    <TouchableOpacity>
+                                        <Ionicons name="heart" size={27} color="#e5c1bd" />
+                                    </TouchableOpacity>
+                                    <Text style={styles.count}>10</Text>
+                                </View>
+                                <View style={styles.icon}>
+                                    <TouchableOpacity>
+                                        <Ionicons name="chatbox" size={27} color="#dfc8ba" />
+                                    </TouchableOpacity>
+                                    <Text style={styles.count}>5</Text>
+                                </View>
+                            </View>
+                            <View style={styles.underline}></View>
+                        </View>
+                    </>
+                }
+                {selectedTab === "추천" &&
+                    <>
+                    </>
+                }
+                {selectedTab === "질문" &&
+                    <>
+                    </>
+                }
             </View>
         </SafeAreaView>
     );
@@ -88,13 +169,85 @@ const styles = StyleSheet.create({
         color: "#9c7866",
         fontWeight: 'bold'
     },
-    contentContainer: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
+    post: {
+        marginTop: 25,
+        flexDirection: 'column'
     },
-    contentText: {
+    tool: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginHorizontal: 20,
+    },
+    img: {
+        width: 80,
+        height: 80,
+        backgroundColor: '#bda08b',
+        borderRadius: 8,
+    },
+    postHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    time: {
+        color: 'rgba(240, 240, 229, 0.5)'
+    },
+    articles: {
+        gap: 5,
+    },
+    profile: {
+        marginLeft: 20,
+        flexDirection: 'row',
+        gap: 5,
+        alignItems: 'center',
+        marginBottom: 5,
+    },
+    name: {
         fontSize: 20,
-        color: "#f0f0e5",
+        color: '#f0f0e5',
+        fontWeight: 'bold'
+    },
+    title: {
+        color: '#f0f0e5',
+        fontSize: 18,
+        fontWeight: 'bold'
+    },
+    text: {
+        color: '#f0f0e5',
+        fontSize: 18,
+    },
+    icons: {
+        marginHorizontal: 20,
+        marginTop: 10,
+        flexDirection: 'row',
+        gap: 10,
+    },
+    icon: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5
+    },
+    count: {
+        fontSize: 15,
+        color: '#f0f0e5'
+    },
+    tags: {
+        marginTop: 5,
+        flexDirection: 'row',
+        gap: 8,
+        alignItems: 'center'
+    },
+    tag: {
+        backgroundColor: '#bda08b',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        color: '#f0f0e5',
+        borderRadius: 20,
+    },
+    underline: {
+        marginTop: 25,
+        borderBottomWidth: 1,
+        borderColor: 'rgba(240, 240, 229, 0.5)'
     },
 });
