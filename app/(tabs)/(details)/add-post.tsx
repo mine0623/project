@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { router } from "expo-router";
-import { SafeAreaView, View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Image } from "react-native";
+import { SafeAreaView, View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Image, Alert } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { supabase } from "@/lib/supabase";
+import { decode as decodeBase64 } from "base64-arraybuffer";
 
 export default function AddPost() {
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [images, setImages] = useState<string[]>([]);
+    const [images, setImages] = useState<{ uri: string; base64: string | null }[]>([]);
 
     const tags = ["추천", "질문"];
 
@@ -26,10 +30,14 @@ export default function AddPost() {
             allowsMultipleSelection: true,
             selectionLimit: remaining,
             quality: 1,
+            base64: true,
         });
 
         if (!result.canceled) {
-            const newImages = result.assets.map(asset => asset.uri);
+            const newImages = result.assets.map(asset => ({
+                uri: asset.uri,
+                base64: asset.base64 ?? null
+            }));
             setImages(prev => [...prev, ...newImages]);
         }
     };
@@ -37,6 +45,128 @@ export default function AddPost() {
     const removeImage = (index: number) => {
         setImages(prev => prev.filter((_, i) => i !== index));
     };
+
+    const mimeFromUri = (uri?: string | null) => {
+        if (!uri) return "application/octet-stream";
+        const ext = uri.split(".").pop()?.toLowerCase();
+        switch (ext) {
+            case "jpg": case "jpeg": return "image/jpeg";
+            case "png": return "image/png";
+            case "webp": return "image/webp";
+            case "heic": return "image/heic";
+            default: return "image/*";
+        }
+    };
+
+    const extFromMime = (mime: string) => {
+        if (mime.includes("jpeg")) return "jpg";
+        if (mime.includes("png")) return "png";
+        if (mime.includes("webp")) return "webp";
+        if (mime.includes("heic")) return "heic";
+        return "bin";
+    };
+
+    const getArrayBufferForUpload = async (uri: string, fallbackBase64?: string | null) => {
+        try {
+            const res = await fetch(uri);
+            const ab = res.arrayBuffer ? await res.arrayBuffer() : await (await res.blob()).arrayBuffer();
+            if (ab && ab.byteLength > 0) return ab;
+        } catch (e) {
+            console.warn("fetch->arrayBuffer failed:", e);
+        }
+
+        if (fallbackBase64) {
+            try {
+                const ab = decodeBase64(fallbackBase64);
+                if (ab && ab.byteLength > 0) return ab;
+            } catch (e) {
+                console.warn("base64 decode failed:", e);
+            }
+        }
+
+        try {
+            const fsB64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+            const ab = decodeBase64(fsB64);
+            if (ab && ab.byteLength > 0) return ab;
+        } catch (e) {
+            console.warn("fs base64 decode failed:", e);
+        }
+
+        throw new Error("이미지 바이트 확보 실패");
+    };
+
+    const uploadImages = async () => {
+        const uploadedUrls: string[] = [];
+        const {
+            data: { user },
+            error: userError
+        } = await supabase.auth.getUser();
+        if (userError || !user) {
+            Alert.alert("로그인 필요", "로그인이 필요합니다.");
+            return [];
+        }
+
+        for (let i = 0; i < images.length; i++) {
+            const { uri, base64 } = images[i];
+            const mime = mimeFromUri(uri);
+            const ext = extFromMime(mime);
+            const fileName = `posts/${user.id}_${Date.now()}_${i}.${ext}`;
+
+            try {
+                const arrayBuffer = await getArrayBufferForUpload(uri, base64);
+                const { error: uploadError } = await supabase.storage.from("posts").upload(fileName, arrayBuffer, {
+                    contentType: mime,
+                    upsert: true,
+                });
+
+                if (uploadError) throw uploadError;
+
+                const { data: pub } = supabase.storage.from("posts").getPublicUrl(fileName);
+                uploadedUrls.push(pub?.publicUrl ?? "");
+            } catch (e: any) {
+                console.error("이미지 업로드 실패:", e);
+                Alert.alert("업로드 실패", e?.message ?? "이미지 업로드 중 오류");
+            }
+        }
+
+        return uploadedUrls;
+    };
+
+    const submitPost = async () => {
+        if (!title.trim()) return Alert.alert("제목을 입력해주세요");
+        if (!content.trim()) return Alert.alert("내용을 입력해주세요");
+
+        const imageUrls = await uploadImages();
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return Alert.alert("로그인 필요");
+
+        const { error } = await supabase.from("posts").insert([
+            {
+                user_id: user.id, // ✅ 추가
+                title,
+                content,
+                tags: selectedTags,
+                images: imageUrls,
+                created_at: new Date(),
+            }
+        ]);
+
+        if (error) {
+            console.error("게시물 업로드 실패:", error);
+            Alert.alert("업로드 실패", error.message);
+            return;
+        }
+
+        setTitle("");
+        setContent("");
+        setSelectedTags([]);
+        setImages([]);
+
+        Alert.alert("성공", "게시물이 등록되었습니다!");
+        router.replace("/post");
+    };
+
 
     return (
         <SafeAreaView style={styles.container}>
@@ -49,12 +179,18 @@ export default function AddPost() {
                 <TextInput
                     style={styles.title}
                     placeholder="제목을 입력해주세요"
+                    value={title}
+                    onChangeText={setTitle}
                 />
                 <TextInput
                     style={styles.text}
                     placeholder="자유롭게 내용을 작성해 주세요."
                     multiline
+                    value={content}
+                    onChangeText={setContent}
+                    maxLength={150}
                 />
+
                 <View style={styles.tags}>
                     {tags.map(tag => {
                         const selected = selectedTags.includes(tag);
@@ -76,24 +212,26 @@ export default function AddPost() {
                 </View>
                 {images.length < 5 && (
                     <TouchableOpacity style={styles.box} onPress={pickImage}>
-                        <Text>image</Text>
+                        <Text style={styles.tagText}>image</Text>
                     </TouchableOpacity>
                 )}
             </View>
-            <ScrollView
-                style={styles.imgs}
-                horizontal={true}
-                showsHorizontalScrollIndicator={false}
-            >
-                {images.map((uri, index) => (
-                    <TouchableOpacity key={index} onPress={() => removeImage(index)}>
-                        <Image source={{ uri }} style={styles.img} />
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            <View style={styles.imags}>
+                <ScrollView
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                >
+                    {images.map((imgObj, index) => (
+                        <TouchableOpacity key={index} onPress={() => removeImage(index)} style={{ marginRight: 8 }}>
+                            <Image source={{ uri: imgObj.uri }} style={styles.image} />
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
 
-
-
+                <TouchableOpacity style={styles.button} onPress={submitPost}>
+                    <Text style={styles.buttonText}>post</Text>
+                </TouchableOpacity>
+            </View>
 
         </SafeAreaView>
     )
@@ -131,7 +269,7 @@ const styles = StyleSheet.create({
         height: 120,
         padding: 10,
         borderRadius: 8,
-        backgroundColor: 'rgba(240, 240, 230, 0.1)',
+        backgroundColor: 'rgba(240, 240, 230, 0.05)',
         color: '#f0f0e5',
         fontSize: 18,
     },
@@ -141,7 +279,8 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     tag: {
-        backgroundColor: 'rgba(183, 170, 147, 0.5)',
+        borderWidth: 1,
+        borderColor: 'rgba(240, 240, 229, 0.5)',
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 20,
@@ -151,29 +290,42 @@ const styles = StyleSheet.create({
     },
     tagText: {
         color: "#f0f0e5",
-        fontWeight: "bold"
     },
     tagTextSelected: {
-        color: "#b7aa93"
+        color: "#b7aa93",
+        fontWeight: "bold"
     },
 
-    imgs: {
+    imags: {
         marginHorizontal: 25,
         marginTop: 20,
-        gap: 8,
     },
-    img: {
+    image: {
         width: 80,
         height: 80,
+        marginRight: 8,
         borderRadius: 8,
     },
     box: {
-        marginTop: 20,
+        marginTop: 10,
         backgroundColor: 'rgba(240, 240, 229, 0.3)',
         width: 80,
         height: 80,
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center'
+    },
+    button: {
+        marginTop: 20,
+        backgroundColor: '#f0f0e5',
+        paddingVertical: 15,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#9c7866',
     },
 })

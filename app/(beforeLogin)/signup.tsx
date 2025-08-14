@@ -59,7 +59,7 @@ export default function Signup() {
         <SafeAreaView style={styles.background}>
             <View style={styles.container}>
                 <Text style={styles.text}>sign up</Text>
-                <View>
+                <View style={styles.tool}>
                     <Text style={styles.inputText}>email</Text>
                     <TextInput
                         style={styles.input}
@@ -70,7 +70,7 @@ export default function Signup() {
                         value={email}
                     />
                 </View>
-                <View>
+                <View style={styles.tool}>
                     <Text style={styles.inputText}>password</Text>
                     <TextInput
                         style={styles.input}
@@ -115,7 +115,6 @@ const styles = StyleSheet.create({
         color: '#f0f0e5',
         fontSize: 25,
         fontWeight: 'bold',
-        marginBottom: 10,
     },
     input: {
         color: '#f0f0e5',
@@ -124,7 +123,7 @@ const styles = StyleSheet.create({
         borderColor: '#f0f0e5',
         padding: 15,
     },
-    password: {
+    tool: {
         gap: 10,
     },
     errorText: {

@@ -211,12 +211,14 @@ export default function Profilesettings() {
     return (
         <SafeAreaView style={styles.background}>
             <View style={styles.container}>
-                <Text style={styles.text}>Profile Settings</Text>
+                <Text style={styles.text}>Profile</Text>
                 <TouchableOpacity style={styles.profileImg} onPress={pickImage}>
                     {imageUri ? (
                         <Image source={{ uri: imageUri }} style={styles.profileImg} />
                     ) : (
-                        <Ionicons name="person-circle-sharp" size={150} color="#b7aa93" />
+                        <View style={styles.box}>
+                            <Text style={styles.boxText}>image</Text>
+                        </View>
                     )}
                 </TouchableOpacity>
 
@@ -256,7 +258,7 @@ export default function Profilesettings() {
                     </View>
                 </View>
                 <View>
-                    <Text style={styles.title}>age</Text>
+                    <Text style={styles.title}>birth date</Text>
                     <View style={styles.pickerContainer}>
                         <Picker
                             selectedValue={year}
@@ -284,7 +286,7 @@ export default function Profilesettings() {
                     </View>
                 </View>
                 <TouchableOpacity onPress={onFinish}>
-                    <Text style={styles.button}>finish</Text>
+                    <Text style={styles.button}>finish!</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
@@ -301,6 +303,15 @@ const styles = StyleSheet.create({
         marginTop: 25,
         gap: 20,
     },
+    box: {
+        backgroundColor: 'rgba(240, 240, 229, 0.2)',
+        width: '100%',
+        height: '100%',
+    },
+    boxText: {
+        margin: 'auto',
+        color: '#f0f0e5'
+    },  
     text: {
         color: '#f0f0e5',
         fontSize: 30,
@@ -366,6 +377,7 @@ const styles = StyleSheet.create({
     },
     button: {
         marginTop: 30,
+        borderRadius: 8,
         backgroundColor: '#f0f0e5',
         color: '#9c7866',
         fontSize: 20,

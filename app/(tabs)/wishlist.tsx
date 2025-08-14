@@ -145,10 +145,11 @@ export default function WishList() {
       <View style={styles.header}>
         <Text style={styles.logo}>mine</Text>
         <TouchableOpacity style={styles.addbutton} onPress={openSheet}>
-          <Text style={styles.addtext}>위시 등록</Text>
+          <Text style={styles.addtext}>add</Text>
           <Ionicons name="add" size={15} color="#f0f0e5" />
         </TouchableOpacity>
       </View>
+      <Text style={styles.title}>wishes</Text>
       <Modal visible={visible} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={closeSheet}>
           <View style={styles.overlay}>
@@ -231,7 +232,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   addtext: {
-    color: '#f0f0e5'
+    color: '#f0f0e5',
+    fontSize: 15,
+  },
+  title: {
+    color: '#f0f0e5',
+    fontWeight: 'bold',
+    fontSize: 25,
+    marginLeft: 30,
+    marginBottom: 10,
   },
   overlay: {
     flex: 1,
