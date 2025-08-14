@@ -15,7 +15,7 @@ export default function ProfileSettings() {
                     <Ionicons name="search" size={25} color="#f0f0e5" />
                 </TouchableOpacity>
             </View>
-            
+
             <View style={styles.tabContainer}>
                 {tabs.map((tab) => (
                     <TouchableOpacity
@@ -126,6 +126,12 @@ export default function ProfileSettings() {
                     </>
                 }
             </View>
+            <TouchableOpacity
+                style={styles.floatingButton}
+                onPress={() => router.push('/add-post')}
+            >
+                <Ionicons name="create" size={28} color="#9c7866" />
+            </TouchableOpacity>
         </SafeAreaView>
     );
 }
@@ -248,5 +254,22 @@ const styles = StyleSheet.create({
         marginTop: 25,
         borderBottomWidth: 1,
         borderColor: 'rgba(240, 240, 229, 0.5)'
+    },
+    floatingButton: {
+        position: "absolute",
+        bottom: 30,
+        left: "50%",
+        transform: [{ translateX: -30 }], // 버튼 너비 절반만큼 왼쪽으로 이동
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: "#e5c1bd",
+        justifyContent: "center",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 5 },
+        shadowRadius: 5,
+        elevation: 5,
     },
 });
