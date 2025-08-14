@@ -1,12 +1,42 @@
 import { SafeAreaView, View, Text, TouchableOpacity, TextInput, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function Login() {
     const [email, setEmail] = useState("");
-    const router = useRouter();
     const [password, setPassword] = useState("");
-    
+    const router = useRouter();
+    const [error, setError] = useState("");
+
+    const onLogin = async () => {
+        setError("");
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email, password,
+        });
+
+        if (error) {
+            setError(error.message);
+            return;
+        }
+
+        const user = data.user;
+        if (!user) return;
+
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+        if (!profile || !profile.name) {
+            router.replace(`/profilesettings?email=${encodeURIComponent(email)}`);
+        } else {
+            router.replace("/post");
+        }
+
+    };
+
     return (
         <SafeAreaView style={styles.background}>
             <View style={styles.container}>
@@ -15,38 +45,32 @@ export default function Login() {
                     <TextInput
                         style={styles.input}
                         placeholder="email"
-                        clearButtonMode="while-editing"
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        onChangeText={(text) => {
-                            const filtered = text.replace(/[^a-zA-Z0-9@]/g, "");
-                            setEmail(filtered);
-                        }}
+                        onChangeText={setEmail}
                         value={email}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder="password"
-                        secureTextEntry={true}
-                        clearButtonMode="while-editing"
+                        secureTextEntry
                         autoCapitalize="none"
-                        onChangeText={(text) => {
-                            const filtered = text.replace(/[^a-zA-Z0-9!@#$%^&*]/g, "");
-                            setPassword(filtered);
-                        }}
+                        onChangeText={setPassword}
                         value={password}
                     />
                 </View>
-                <TouchableOpacity onPress={() => router.replace('/post')}>
+                {error ? <Text style={{ color: "rgba(240, 240, 229, 0.5)" }}>{error}</Text> : null}
+                <TouchableOpacity onPress={onLogin}>
                     <Text style={styles.loginButton}>Login</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => router.push('/signup')}>
+                <TouchableOpacity onPress={() => router.push("/signup")}>
                     <Text style={styles.signupButton}>Sign up</Text>
                 </TouchableOpacity>
             </View>
-        </SafeAreaView >
-    )
+        </SafeAreaView>
+    );
 }
+
 
 const styles = StyleSheet.create({
     background: {

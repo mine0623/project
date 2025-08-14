@@ -5,7 +5,6 @@ import { router } from "expo-router";
 
 export default function ProfileSettings() {
     const [selectedTab, setSelectedTab] = useState("전체");
-
     const tabs = ["전체", "추천", "질문"];
 
     return (
@@ -16,8 +15,7 @@ export default function ProfileSettings() {
                     <Ionicons name="search" size={25} color="#f0f0e5" />
                 </TouchableOpacity>
             </View>
-
-
+            
             <View style={styles.tabContainer}>
                 {tabs.map((tab) => (
                     <TouchableOpacity
@@ -48,7 +46,7 @@ export default function ProfileSettings() {
                             <View>
                                 <View style={styles.postHeader}>
                                     <TouchableOpacity style={styles.profile}>
-                                        <Ionicons name="person-circle-sharp" size={35} color="#bcb8b1" />
+                                        <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
                                         <Text style={styles.name}>안미네미네짱</Text>
                                     </TouchableOpacity>
                                     <Text style={styles.time}>1시간 전</Text>

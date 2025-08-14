@@ -1,6 +1,7 @@
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { SafeAreaView, View, Text, TouchableOpacity, TextInput, StyleSheet } from "react-native";
+import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 
 export default function Signup() {
     const [email, setEmail] = useState("");
@@ -14,15 +15,45 @@ export default function Signup() {
             setError("비밀번호는 6자 이상 10자 이하여야 합니다.");
             return false;
         }
+        if (password !== passwordConfirm) {
+            setError("비밀번호가 일치하지 않습니다.");
+            return false;
+        }
         setError("");
         return true;
     };
 
-    const onSignUpPress = () => {
-        if (validatePassword()) {
-            router.replace('/profilesettings')
+    const onSignUpPress = async () => {
+        if (!validatePassword()) return;
+
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+        });
+
+        if (authError) {
+            setError(authError.message);
+            return;
         }
+
+        const userId = authData.user?.id;
+        if (!userId) return;
+
+        await supabase.from("profiles").insert([
+            {
+                id: userId,
+                email: email,
+                name: "",
+                gender: "",
+                age: null,
+            },
+        ]);
+
+        alert("회원가입 완료");
+        router.replace("/login");
     };
+
+
 
     return (
         <SafeAreaView style={styles.background}>
@@ -33,55 +64,36 @@ export default function Signup() {
                     <TextInput
                         style={styles.input}
                         placeholder="email"
-                        clearButtonMode="while-editing"
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        onChangeText={(text) => {
-                            const filtered = text.replace(/[^a-zA-Z0-9@]/g, "");
-                            setEmail(filtered);
-                        }}
+                        onChangeText={(text) => setEmail(text)}
                         value={email}
                     />
                 </View>
                 <View>
                     <Text style={styles.inputText}>password</Text>
-                    <View style={styles.password}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="password"
-                            secureTextEntry={true}
-                            clearButtonMode="while-editing"
-                            autoCapitalize="none"
-                            onChangeText={(text) => {
-                                const filtered = text.replace(/[^a-zA-Z0-9!@#$%^&*]/g, "");
-                                setPassword(filtered);
-                            }}
-                            value={password}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Please enter again"
-                            secureTextEntry={true}
-                            clearButtonMode="while-editing"
-                            autoCapitalize="none"
-                            onChangeText={(text) => {
-                                const filtered = text.replace(/[^a-zA-Z0-9!@#$%^&*]/g, "");
-                                setPasswordConfirm(filtered);
-                            }}
-                            value={passwordConfirm}
-                        />
-
-                        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-                    </View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="password"
+                        secureTextEntry
+                        onChangeText={(text) => setPassword(text)}
+                        value={password}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Please enter again"
+                        secureTextEntry
+                        onChangeText={(text) => setPasswordConfirm(text)}
+                        value={passwordConfirm}
+                    />
+                    {error ? <Text style={styles.errorText}>{error}</Text> : null}
                 </View>
                 <TouchableOpacity onPress={onSignUpPress}>
                     <Text style={styles.button}>Sign up</Text>
                 </TouchableOpacity>
             </View>
-
         </SafeAreaView>
-    )
+    );
 }
 
 const styles = StyleSheet.create({

@@ -17,7 +17,7 @@ export default function Intro() {
         <SafeAreaView style={styles.background}>
             <View style={styles.container}>
                 <Text style={styles.logo}>mine</Text>
-                <Text style={styles.text}>'나의 것' 을 찾는 커뮤니티 소통앱</Text>
+                <Text style={styles.text}>나에게 꼭 맞는 옷을 찾는 커뮤니티 소통앱</Text>
             </View>
         </SafeAreaView>
     );
