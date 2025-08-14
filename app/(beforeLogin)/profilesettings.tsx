@@ -44,42 +44,62 @@ export default function Profilesettings() {
 
     const onFinish = async () => {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+            alert("로그인이 필요합니다.");
+            return;
+        }
 
-        let avatar_url = null;
+        let avatar_url: string | null = null;
 
         if (imageUri) {
-            const response = await fetch(imageUri);
-            const blob = await response.blob();
-            const fileName = `avatars/${user.id}.png`;
-            const { data, error: uploadError } = await supabase.storage
-                .from("avatars")
-                .upload(fileName, blob, { upsert: true });
+            try {
+                const response = await fetch(imageUri);
+                const blob = await response.blob();
+                const fileName = `avatars/${user.id}.png`;
 
-            if (uploadError) {
-                console.error(uploadError);
-            } else {
-                avatar_url = `${supabase.storage.from("avatars").getPublicUrl(fileName).data.publicUrl}`;
+                const { data, error } = await supabase.storage
+                    .from("avatars")
+                    .upload(fileName, blob, { upsert: true });
+
+                if (error) {
+                    console.error("이미지 업로드 에러:", error);
+                    alert("이미지 업로드 실패, 다시 시도해주세요.");
+                    return;
+                }
+
+                avatar_url = supabase.storage
+                    .from("avatars")
+                    .getPublicUrl(fileName).data.publicUrl;
+
+            } catch (e) {
+                console.error("이미지 처리 중 에러:", e);
+                alert("이미지 처리 중 에러가 발생했습니다.");
+                return;
             }
         }
 
-        const { error } = await supabase.from("profiles").insert([
+        const { error } = await supabase.from("profiles").upsert([
             {
                 id: user.id,
                 email,
                 name,
                 gender: selectedGender,
+                birth_year: year,
+                birth_month: month,
+                birth_day: day,
                 avatar_url,
-            }
+            },
         ]);
 
         if (error) {
-            console.error(error);
+            console.error("프로필 저장 에러:", error);
+            alert("프로필 저장 중 오류가 발생했습니다.");
             return;
         }
 
         router.replace("/post");
     };
+
 
 
     return (
@@ -129,7 +149,7 @@ export default function Profilesettings() {
                         ))}
                     </View>
                 </View>
-                <View style={styles.frame}>
+                <View>
                     <Text style={styles.title}>age</Text>
                     <View style={styles.pickerContainer}>
                         <Picker
@@ -172,7 +192,7 @@ const styles = StyleSheet.create({
     },
     container: {
         marginHorizontal: 25,
-        marginTop: 50,
+        marginTop: 25,
         gap: 20,
     },
     text: {
@@ -239,7 +259,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     button: {
-        marginTop: 10,
+        marginTop: 30,
         backgroundColor: '#f0f0e5',
         color: '#9c7866',
         fontSize: 20,
