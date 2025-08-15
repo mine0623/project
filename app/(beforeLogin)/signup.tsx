@@ -68,6 +68,7 @@ export default function Signup() {
                         autoCapitalize="none"
                         onChangeText={(text) => setEmail(text)}
                         value={email}
+                        clearButtonMode="while-editing"
                     />
                 </View>
                 <View style={styles.tool}>
@@ -78,6 +79,7 @@ export default function Signup() {
                         secureTextEntry
                         onChangeText={(text) => setPassword(text)}
                         value={password}
+                        clearButtonMode="while-editing"
                     />
                     <TextInput
                         style={styles.input}
@@ -85,6 +87,7 @@ export default function Signup() {
                         secureTextEntry
                         onChangeText={(text) => setPasswordConfirm(text)}
                         value={passwordConfirm}
+                        clearButtonMode="while-editing"
                     />
                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
                 </View>

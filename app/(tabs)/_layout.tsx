@@ -13,17 +13,6 @@ export default function TabLayout() {
                 }}
             >
                 <Tabs.Screen
-                    name="post"
-                    options={{
-                        title: '자유게시판',
-                        tabBarShowLabel: false,
-                        tabBarItemStyle: {
-                            marginTop: 5,
-                        },
-                        tabBarIcon: ({ color }) => <Ionicons name="chatbubble-ellipses-sharp" size={25} color={color} />,
-                    }}
-                />
-                <Tabs.Screen
                     name="wishlist"
                     options={{
                         title: '위시리스트',
@@ -32,6 +21,17 @@ export default function TabLayout() {
                             marginTop: 5,
                         },
                         tabBarIcon: ({ color }) => <Ionicons name="bag" size={25} color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="post"
+                    options={{
+                        title: '자유게시판',
+                        tabBarShowLabel: false,
+                        tabBarItemStyle: {
+                            marginTop: 5,
+                        },
+                        tabBarIcon: ({ color }) => <Ionicons name="chatbubble-ellipses-sharp" size={25} color={color} />,
                     }}
                 />
             </Tabs>

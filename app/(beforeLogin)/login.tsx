@@ -49,6 +49,7 @@ export default function Login() {
                         autoCapitalize="none"
                         onChangeText={setEmail}
                         value={email}
+                        clearButtonMode="while-editing"
                     />
                     <TextInput
                         style={styles.input}
@@ -57,6 +58,7 @@ export default function Login() {
                         autoCapitalize="none"
                         onChangeText={setPassword}
                         value={password}
+                        clearButtonMode="while-editing"
                     />
                 </View>
                 {error ? <Text style={{ color: "rgba(240, 240, 229, 0.5)" }}>{error}</Text> : null}
