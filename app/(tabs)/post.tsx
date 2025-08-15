@@ -5,21 +5,28 @@ import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
 
 export default function ProfileSettings() {
-    const [selectedTab, setSelectedTab] = useState("전체");
-    const [posts, setPosts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const tabs = ["전체", "추천", "질문"];
+  const [selectedTab, setSelectedTab] = useState("전체");
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-    useEffect(() => {
-        fetchPosts();
-    }, [selectedTab]);
+  const tabs = ["전체", "추천", "질문"];
 
-    const fetchPosts = async () => {
-        setLoading(true);
+  useEffect(() => {
+    getCurrentUser();
+    fetchPosts();
+  }, [selectedTab]);
 
-        let query = supabase
-            .from("posts")
-            .select(`
+  const getCurrentUser = async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error) setCurrentUser(data.user);
+  };
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    let query = supabase
+      .from("posts")
+      .select(`
         id,
         title,
         content,
@@ -30,155 +37,185 @@ export default function ProfileSettings() {
           id,
           name,
           gender,
-          avatar_url,
-          birth_year,
-          birth_month,
-          birth_day
+          avatar_url
+        ),
+        hearts (
+          user_id
+        ),
+        comments (
+          id
         )
       `)
-            .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false });
 
-        // 탭 필터
-        if (selectedTab !== "전체") {
-            query = query.contains("tags", [selectedTab]);
-        }
+    if (selectedTab !== "전체") {
+      query = query.contains("tags", [selectedTab]);
+    }
 
-        const { data, error } = await query;
-        if (error) {
-            console.error("Error fetching posts:", error);
-        } else {
-            setPosts(data);
-        }
-        setLoading(false);
-    };
+    const { data, error } = await query;
+    if (error) console.error("Error fetching posts:", error);
+    else setPosts(data);
+    setLoading(false);
+  };
 
-    const renderPost = ({ item }: { item: any }) => (
-        <View style={styles.post}>
-            <View>
-                {/* 프로필 */}
-                <View style={styles.postHeader}>
-                    <TouchableOpacity style={styles.profile}>
-                        {item.profiles?.avatar_url ? (
-                            <Image source={{ uri: item.profiles.avatar_url }} style={{ width: 35, height: 35, borderRadius: 50 }} />
-                        ) : (
-                            <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
-                        )}
-                        <Text style={styles.name}>{item.profiles?.name || "익명"}</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.time}>
-                        {item.profiles?.gender || "성별 없음"}
-                    </Text>
-                    <Text style={styles.time}>|</Text>
-                    <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
-                </View>
+  const toggleHeart = async (postId: number) => {
+    if (!currentUser) return;
 
-                {/* 본문 */}
-                <View style={styles.tool}>
-                    <View style={styles.main}>
-                        <View style={styles.articles}>
-                            <Text style={styles.title}>{item.title}</Text>
-                            <Text style={styles.text}>{item.content}</Text>
-                        </View>
-                        {item.images?.length > 0 ? (
-                            <Image
-                                source={{ uri: item.images[0] }}
-                                style={styles.img}
-                                resizeMode="cover"
-                            />
-                        ) : (
-                            <View style={styles.img}>
-                                <Ionicons name="image-outline" size={40} color="#f0f0e5" />
-                            </View>
-                        )}
-                    </View>
-                    {/* 태그 */}
-                    <View style={styles.tags}>
-                        {item.tags?.map((tag: string, index: number) => (
-                            <Text key={index} style={styles.tag}>
-                                #{tag}
-                            </Text>
-                        ))}
-                    </View>
-                </View>
-            </View>
+    const postIndex = posts.findIndex((p) => p.id === postId);
+    if (postIndex === -1) return;
 
-            {/* 아이콘 */}
-            <View style={styles.icons}>
-                <View style={styles.icon}>
-                    <TouchableOpacity>
-                        <Ionicons name="heart" size={27} color="#e5c1bd" />
-                    </TouchableOpacity>
-                    <Text style={styles.count}>0</Text>
-                </View>
-                <View style={styles.icon}>
-                    <TouchableOpacity>
-                        <Ionicons name="chatbox" size={27} color="#dfc8ba" />
-                    </TouchableOpacity>
-                    <Text style={styles.count}>0</Text>
-                </View>
-            </View>
-            <View style={styles.underline}></View>
-        </View>
-    );
+    const post = posts[postIndex];
 
-    const timeAgo = (date: string) => {
-        const diff = (new Date().getTime() - new Date(date).getTime()) / 1000;
-        if (diff < 60) return `${Math.floor(diff)}초 전`;
-        if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-        return `${Math.floor(diff / 86400)}일 전`;
-    };
+    const hasHeart = post.hearts.some((h: any) => h.user_id === currentUser.id);
+
+    if (hasHeart) {
+      // 삭제
+      await supabase
+        .from("hearts")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", currentUser.id);
+    } else {
+      // 추가
+      await supabase
+        .from("hearts")
+        .insert([{ post_id: postId, user_id: currentUser.id }]);
+    }
+
+    fetchPosts();
+  };
+
+  const renderPost = ({ item }: { item: any }) => {
+    const hasHeart = currentUser
+      ? item.hearts.some((h: any) => h.user_id === currentUser.id)
+      : false;
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.logo}>mine</Text>
-                <TouchableOpacity onPress={() => router.push('/search')}>
-                    <Ionicons name="search" size={25} color="#f0f0e5" />
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.tabContainer}>
-                {tabs.map((tab) => (
-                    <TouchableOpacity
-                        key={tab}
-                        style={[
-                            styles.tabButton,
-                            selectedTab === tab && styles.tabButtonSelected,
-                        ]}
-                        onPress={() => setSelectedTab(tab)}
-                    >
-                        <Text
-                            style={[
-                                styles.tabText,
-                                selectedTab === tab && styles.tabTextSelected,
-                            ]}
-                        >
-                            {tab === "전체" ? tab : `#${tab}`}
-                        </Text>
-
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            {loading ? (
-                <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
+      <View style={styles.post}>
+        <View style={styles.postHeader}>
+          <TouchableOpacity style={styles.profile}>
+            {item.profiles?.avatar_url ? (
+              <Image
+                source={{ uri: item.profiles.avatar_url }}
+                style={{ width: 35, height: 35, borderRadius: 50 }}
+              />
             ) : (
-                <FlatList
-                    data={posts}
-                    renderItem={renderPost}
-                    keyExtractor={(item) => item.id.toString()}
-                />
+              <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
             )}
+            <Text style={styles.name}>{item.profiles?.name || "익명"}</Text>
+          </TouchableOpacity>
+          <Text style={styles.time}>{item.profiles?.gender || "성별 없음"}</Text>
+          <Text style={styles.time}>|</Text>
+          <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
+        </View>
 
-            <TouchableOpacity
-                style={styles.floatingTextButton}
-                onPress={() => router.push('/add-post')}
-            >
-                <Text style={styles.floatingText}>글쓰기</Text>
+        <View style={styles.tool}>
+          <View style={styles.main}>
+            <View style={styles.articles}>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.text}>{item.content}</Text>
+            </View>
+            {item.images?.length > 0 ? (
+              <Image
+                source={{ uri: item.images[0] }}
+                style={styles.img}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.img}>
+                <Ionicons name="image-outline" size={40} color="#f0f0e5" />
+              </View>
+            )}
+          </View>
+
+          <View style={styles.tags}>
+            {item.tags?.map((tag: string, index: number) => (
+              <Text key={index} style={styles.tag}>
+                #{tag}
+              </Text>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.icons}>
+          <View style={styles.icon}>
+            <TouchableOpacity onPress={() => toggleHeart(item.id)}>
+              <Ionicons
+                name="heart"
+                size={27}
+                color={hasHeart ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"}
+              />
             </TouchableOpacity>
-        </SafeAreaView>
+            <Text style={styles.count}>{item.hearts?.length || 0}</Text>
+          </View>
+          <View style={styles.icon}>
+            <Ionicons name="chatbox" size={27} color="#dfc8ba" />
+            <Text style={styles.count}>{item.comments?.length || 0}</Text>
+          </View>
+        </View>
+
+        <View style={styles.underline}></View>
+      </View>
     );
+  };
+
+  const timeAgo = (date: string) => {
+    const diff = (new Date().getTime() - new Date(date).getTime()) / 1000;
+    if (diff < 60) return `${Math.floor(diff)}초 전`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+    return `${Math.floor(diff / 86400)}일 전`;
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.logo}>mine</Text>
+        <TouchableOpacity onPress={() => router.push("/search")}>
+          <Ionicons name="search" size={25} color="#f0f0e5" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.tabContainer}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[
+              styles.tabButton,
+              selectedTab === tab && styles.tabButtonSelected,
+            ]}
+            onPress={() => setSelectedTab(tab)}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === tab && styles.tabTextSelected,
+              ]}
+            >
+              {tab === "전체" ? tab : `#${tab}`}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
+      ) : (
+        <FlatList
+          data={posts}
+          renderItem={renderPost}
+          keyExtractor={(item) => item.id.toString()}
+        />
+      )}
+
+      <TouchableOpacity
+        style={styles.floatingTextButton}
+        onPress={() => router.push("/add-post")}
+      >
+        <Text style={styles.floatingText}>글쓰기</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
