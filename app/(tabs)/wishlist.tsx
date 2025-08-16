@@ -59,7 +59,7 @@ export default function WishList() {
     if (!link.trim()) return null;
 
     try {
-      const res = await fetch('http://172.30.1.66:3000/parse-link', {
+      const res = await fetch('http://172.30.1.87:3000/parse-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: link }),
@@ -143,13 +143,12 @@ export default function WishList() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.logo}>mine</Text>
+        <Text style={styles.logo}>wishlist</Text>
         <TouchableOpacity style={styles.addbutton} onPress={openSheet}>
           <Text style={styles.addtext}>add</Text>
           <Ionicons name="add" size={15} color="#f0f0e5" />
         </TouchableOpacity>
       </View>
-      <Text style={styles.title}>wishes</Text>
       <Modal visible={visible} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={closeSheet}>
           <View style={styles.overlay}>
@@ -234,13 +233,6 @@ const styles = StyleSheet.create({
   addtext: {
     color: '#f0f0e5',
     fontSize: 15,
-  },
-  title: {
-    color: '#f0f0e5',
-    fontWeight: 'bold',
-    fontSize: 25,
-    marginLeft: 30,
-    marginBottom: 10,
   },
   overlay: {
     flex: 1,

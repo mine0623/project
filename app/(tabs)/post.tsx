@@ -31,58 +31,53 @@ export default function Post() {
   };
 
   const fetchPosts = async () => {
-  let query = supabase
-    .from("posts")
-    .select(`
-      id,
-      title,
-      content,
-      tags,
-      images,
-      created_at,
-      profiles (
+    let query = supabase
+      .from("posts")
+      .select(`
         id,
-        name,
-        gender,
-        avatar_url
-      ),
-      hearts (
-        user_id
-      ),
-      comments (
-        id
-      )
-    `);
+        title,
+        content,
+        tags,
+        images,
+        created_at,
+        profiles (
+          id,
+          name,
+          gender,
+          avatar_url,
+          birth_year
+        ),
+        hearts (
+          user_id
+        ),
+        comments (
+          id
+        )
+      `);
 
-  if (selectedTab !== "전체") query = query.contains("tags", [selectedTab]);
+    if (selectedTab !== "전체") query = query.contains("tags", [selectedTab]);
+    if (sortOption === "latest") query = query.order("created_at", { ascending: false });
 
-  // 최신순 정렬은 DB에서, 인기순은 클라이언트에서
-  if (sortOption === "latest") {
-    query = query.order("created_at", { ascending: false });
-  }
+    const { data, error } = await query;
+    if (error) {
+      console.error("Error fetching posts:", error);
+      setPosts([]);
+      return;
+    }
 
-  const { data, error } = await query;
-  if (error) {
-    console.error("Error fetching posts:", error);
-    setPosts([]);
-    return;
-  }
+    let formatted = (data ?? []).map((post: any) => ({
+      ...post,
+      profiles: post.profiles ?? null,
+      hearts: Array.isArray(post.hearts) ? post.hearts : [],
+      comments: Array.isArray(post.comments) ? post.comments : [],
+    }));
 
-  let formatted = (data ?? []).map((post: any) => ({
-    ...post,
-    profiles: post.profiles ?? null,
-    hearts: Array.isArray(post.hearts) ? post.hearts : [],
-    comments: Array.isArray(post.comments) ? post.comments : [],
-  }));
+    if (sortOption === "popular") {
+      formatted = formatted.sort((a, b) => b.hearts.length - a.hearts.length);
+    }
 
-  // 인기순 정렬 (hearts 배열 길이 기준)
-  if (sortOption === "popular") {
-    formatted = formatted.sort((a, b) => b.hearts.length - a.hearts.length);
-  }
-
-  setPosts(formatted);
-};
-
+    setPosts(formatted);
+  };
 
   const toggleHeart = async (postId: number) => {
     if (!currentUser) return;
@@ -105,65 +100,90 @@ export default function Post() {
     setPosts(updatedPosts);
   };
 
+  const getAgeGroup = (birth_year: number | null) => {
+    if (!birth_year) return "연령대 없음";
+    const age = new Date().getFullYear() - birth_year;
+    if (age < 10) return "10세 미만";
+    const group = Math.floor(age / 10) * 10;
+    return `${group}대`;
+  };
+
   const renderPost = ({ item }: { item: any }) => {
     const profile = item.profiles;
     const hasHeart = currentUser ? item.hearts.some((h: any) => h.user_id === currentUser.id) : false;
 
     return (
-      <View style={styles.post}>
-        <View style={styles.postHeader}>
-          <TouchableOpacity style={styles.profile}>
-            {profile?.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-            ) : (
-              <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
-            )}
-            <Text style={styles.name}>{profile?.name || "익명"}</Text>
-          </TouchableOpacity>
-          <Text style={styles.time}>{profile?.gender || "성별 없음"}</Text>
-          <Text style={styles.time}>|</Text>
-          <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
-        </View>
-
-        <View style={styles.tool}>
-          <View style={styles.main}>
-            <View style={styles.articles}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.text}>{item.content}</Text>
-            </View>
-            {item.images?.length > 0 ? (
-              <Image source={{ uri: item.images[0] }} style={styles.img} resizeMode="cover" />
-            ) : (
-              <View style={styles.img}>
-                <Ionicons name="image-outline" size={40} color="#f0f0e5" />
-              </View>
-            )}
-          </View>
-
-          <View style={styles.tags}>
-            {item.tags?.map((tag: string, index: number) => (
-              <Text key={index} style={styles.tag}>
-                #{tag}
-              </Text>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.icons}>
-          <View style={styles.icon}>
-            <TouchableOpacity onPress={() => toggleHeart(item.id)}>
-              <Ionicons name="heart" size={27} color={hasHeart ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"} />
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() =>
+          router.push({
+            pathname: "/postDetail",
+            params: { post: JSON.stringify(item) } // 모든 데이터 안전하게 문자열로 전달
+          })
+        }
+      >
+        <View style={styles.post}>
+          <View style={styles.postHeader}>
+            <TouchableOpacity style={styles.profile}>
+              {profile?.avatar_url ? (
+                <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+              ) : (
+                <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
+              )}
+              <Text style={styles.name}>{profile?.name || "익명"}</Text>
             </TouchableOpacity>
-            <Text style={styles.count}>{item.hearts.length}</Text>
-          </View>
-          <View style={styles.icon}>
-            <Ionicons name="chatbox" size={27} color="#dfc8ba" />
-            <Text style={styles.count}>{item.comments.length}</Text>
-          </View>
-        </View>
 
-        <View style={styles.underline}></View>
-      </View>
+            <Text style={styles.time}>{getAgeGroup(profile?.birth_year)}</Text>
+            <Text style={styles.time}>|</Text>
+            <Text style={styles.time}>{profile?.gender || "성별 없음"}</Text>
+            <Text style={styles.time}>|</Text>
+            <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
+          </View>
+
+          <View style={styles.tool}>
+            <View style={styles.main}>
+              <View style={styles.articles}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.text}>{item.content}</Text>
+              </View>
+              {item.images?.length > 0 ? (
+                <Image source={{ uri: Array.isArray(item.images) ? item.images[0] : item.images }} style={styles.img} resizeMode="cover" />
+              ) : (
+                <View style={styles.img}>
+                  <Ionicons name="image-outline" size={40} color="#f0f0e5" />
+                </View>
+              )}
+            </View>
+
+            <View style={styles.tags}>
+              {item.tags?.map((tag: string, index: number) => (
+                <Text key={index} style={styles.tag}>
+                  #{tag}
+                </Text>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.icons}>
+            <View style={styles.icon}>
+              <TouchableOpacity onPress={() => toggleHeart(item.id)}>
+                <Ionicons
+                  name="heart"
+                  size={27}
+                  color={hasHeart ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"}
+                />
+              </TouchableOpacity>
+              <Text style={styles.count}>{item.hearts.length}</Text>
+            </View>
+            <View style={styles.icon}>
+              <Ionicons name="chatbox" size={27} color="#dfc8ba" />
+              <Text style={styles.count}>{item.comments.length}</Text>
+            </View>
+          </View>
+
+          <View style={styles.underline}></View>
+        </View>
+      </TouchableOpacity>
     );
   };
 
@@ -220,7 +240,6 @@ export default function Post() {
         </TouchableOpacity>
       </View>
 
-
       <FlatList
         data={posts}
         renderItem={renderPost}
@@ -230,11 +249,11 @@ export default function Post() {
 
       <TouchableOpacity style={styles.floatingTextButton} onPress={() => router.push("/add-post")}>
         <Text style={styles.floatingText}>글쓰기</Text>
+        <Ionicons name="pencil" size={15} color="black" />
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -283,7 +302,7 @@ const styles = StyleSheet.create({
   },
   sortButton: {
   },
-  sortSelected: { 
+  sortSelected: {
   },
   sortText: {
     color: "rgba(240, 240, 229, 0.5)",
@@ -385,16 +404,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(240, 240, 229, 0.5)'
   },
   floatingTextButton: {
+    flexDirection: 'row',
     position: "absolute",
-    bottom: 30,
-    left: "50%",
-    transform: [{ translateX: -40 }],
+    bottom: 40,
+    alignSelf: "center", // 화면 중앙
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: "#f0f0e5",
+    backgroundColor: "rgba(240, 240, 229, 0.5)",
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    gap: 5,
   },
   floatingText: {
     fontSize: 16,
