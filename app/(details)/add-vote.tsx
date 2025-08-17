@@ -257,7 +257,7 @@ export default function AddVote() {
           <View key={tabIndex} style={[styles.page, { width }]}>
             <TextInput
               style={styles.textInput}
-              placeholder={tabIndex === 0 ? "살까? 말까?" : "둘 중 뭐가 날까?"}
+              placeholder={tabIndex === 0 ? "살까? 말까?" : "둘 중 골라줘!"}
               placeholderTextColor="#f0f0e5"
               multiline
               value={textTabs[tabIndex]}
@@ -314,8 +314,9 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     marginVertical: 10,
+    marginLeft: 30,
     gap: 10
   },
   tabButton: {

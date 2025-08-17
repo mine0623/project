@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
-export default function VoteRandom() {
+export default function Vote() {
     const router = useRouter();
     const [vote, setVote] = useState<any | null>(null);
     const [selected, setSelected] = useState<number | null>(null);
@@ -63,12 +63,17 @@ export default function VoteRandom() {
     const options = vote.images ?? [];
 
     return (
-
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.logo}>votes</Text>
             </View>
             <View style={styles.voteBox}>
+                {options.length === 1 ? (
+                    <Text style={styles.guideText}>살까? 말까?</Text>
+                ) : (
+                    <Text style={styles.guideText}>둘 중 골라줘</Text>
+                )}
+
                 <Text style={styles.voteContent}>{vote.content}</Text>
 
                 {options.length === 1 ? (
@@ -93,7 +98,6 @@ export default function VoteRandom() {
                                     style={[styles.voteOption, selected === idx && styles.voteOptionSelected]}
                                 >
                                     <Image source={{ uri: img }} style={styles.voteImage} />
-                                    <Text style={styles.optionLabel}>{idx === 0 ? "A" : "B"}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -103,6 +107,7 @@ export default function VoteRandom() {
                     </View>
                 )}
             </View>
+
             <TouchableOpacity
                 style={styles.addbutton}
                 onPress={() => router.push("/add-vote")}
@@ -157,10 +162,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 20,
     },
+    guideText: {
+        color: "#f0f0e5",
+        fontSize: 20,
+        fontWeight: "bold",
+        textAlign: "center",
+        marginBottom: 10,
+    },
+
     voteContent: {
         color: "#f0f0e5",
         fontSize: 20,
-        textAlign: "center"
+
     },
     optionContainer: {
         flexDirection: "column",

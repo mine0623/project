@@ -119,70 +119,80 @@ export default function Search() {
             : false;
 
         return (
-            <View style={styles.post}>
-                <View style={styles.postHeader}>
-                    <TouchableOpacity style={styles.profile}>
-                        {profile?.avatar_url ? (
-                            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-                        ) : (
-                            <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
-                        )}
-                        <Text style={styles.name}>{profile?.name || "익명"}</Text>
-                    </TouchableOpacity>
-
-                    {/* 나이대 + 성별 */}
-                    <Text style={styles.time}>{getAgeGroup(profile?.birth_year)}</Text>
-                    <Text style={styles.time}>|</Text>
-                    <Text style={styles.time}>{profile?.gender || "성별 없음"}</Text>
-                    <Text style={styles.time}>|</Text>
-                    <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
-                </View>
-
-                <View style={styles.tool}>
-                    <View style={styles.main}>
-                        <View style={styles.articles}>
-                            <Text style={styles.title}>{item.title}</Text>
-                            <Text style={styles.text}>{item.content}</Text>
-                        </View>
-                        {item.images?.length > 0 ? (
-                            <Image source={{ uri: item.images[0] }} style={styles.img} resizeMode="cover" />
-                        ) : (
-                            <View style={styles.img}>
-                                <Ionicons name="image-outline" size={40} color="#f0f0e5" />
-                            </View>
-                        )}
-                    </View>
-
-                    <View style={styles.tags}>
-                        {item.tags?.map((tag: string, index: number) => (
-                            <Text key={index} style={styles.tag}>
-                                #{tag}
-                            </Text>
-                        ))}
-                    </View>
-                </View>
-
-                <View style={styles.icons}>
-                    <View style={styles.icon}>
-                        <TouchableOpacity onPress={() => toggleHeart(item.id)}>
-                            <Ionicons
-                                name="heart"
-                                size={27}
-                                color={hasHeart ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"}
-                            />
+            <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() =>
+                    router.push({
+                        pathname: "/postDetail",
+                        params: { post: JSON.stringify(item) } // 전체 데이터 문자열로 전달
+                    })
+                }
+            >
+                <View style={styles.post}>
+                    <View style={styles.postHeader}>
+                        <TouchableOpacity style={styles.profile}>
+                            {profile?.avatar_url ? (
+                                <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+                            ) : (
+                                <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
+                            )}
+                            <Text style={styles.name}>{profile?.name || "익명"}</Text>
                         </TouchableOpacity>
-                        <Text style={styles.count}>{item.hearts.length}</Text>
-                    </View>
-                    <View style={styles.icon}>
-                        <Ionicons name="chatbox" size={27} color="#dfc8ba" />
-                        <Text style={styles.count}>{item.comments.length}</Text>
-                    </View>
-                </View>
 
-                <View style={styles.underline}></View>
-            </View>
+                        <Text style={styles.time}>{getAgeGroup(profile?.birth_year)}</Text>
+                        <Text style={styles.time}>|</Text>
+                        <Text style={styles.time}>{profile?.gender || "성별 없음"}</Text>
+                        <Text style={styles.time}>|</Text>
+                        <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
+                    </View>
+
+                    <View style={styles.tool}>
+                        <View style={styles.main}>
+                            <View style={styles.articles}>
+                                <Text style={styles.title}>{item.title}</Text>
+                                <Text style={styles.text}>{item.content}</Text>
+                            </View>
+                            {item.images?.length > 0 ? (
+                                <Image source={{ uri: item.images[0] }} style={styles.img} resizeMode="cover" />
+                            ) : (
+                                <View style={styles.img}>
+                                    <Ionicons name="image-outline" size={40} color="#f0f0e5" />
+                                </View>
+                            )}
+                        </View>
+
+                        <View style={styles.tags}>
+                            {item.tags?.map((tag: string, index: number) => (
+                                <Text key={index} style={styles.tag}>
+                                    #{tag}
+                                </Text>
+                            ))}
+                        </View>
+                    </View>
+
+                    <View style={styles.icons}>
+                        <View style={styles.icon}>
+                            <TouchableOpacity onPress={() => toggleHeart(item.id)}>
+                                <Ionicons
+                                    name="heart"
+                                    size={27}
+                                    color={hasHeart ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"}
+                                />
+                            </TouchableOpacity>
+                            <Text style={styles.count}>{item.hearts.length}</Text>
+                        </View>
+                        <View style={styles.icon}>
+                            <Ionicons name="chatbox" size={27} color="#dfc8ba" />
+                            <Text style={styles.count}>{item.comments.length}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.underline}></View>
+                </View>
+            </TouchableOpacity>
         );
     };
+
 
     const timeAgo = (date: string) => {
         const diff = (new Date().getTime() - new Date(date).getTime()) / 1000;

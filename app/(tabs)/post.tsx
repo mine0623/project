@@ -118,7 +118,7 @@ export default function Post() {
         onPress={() =>
           router.push({
             pathname: "/postDetail",
-            params: { post: JSON.stringify(item) } // 모든 데이터 안전하게 문자열로 전달
+            params: { post: JSON.stringify(item) }
           })
         }
       >
@@ -249,7 +249,7 @@ export default function Post() {
 
       <TouchableOpacity style={styles.floatingTextButton} onPress={() => router.push("/add-post")}>
         <Text style={styles.floatingText}>글쓰기</Text>
-        <Ionicons name="pencil" size={15} color="black" />
+        <Ionicons name="pencil" size={15} color="#9c7866" />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -407,10 +407,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     position: "absolute",
     bottom: 40,
-    alignSelf: "center", // 화면 중앙
+    alignSelf: "center",
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: "rgba(240, 240, 229, 0.5)",
+    backgroundColor: "#f0f0e5",
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -418,6 +418,7 @@ const styles = StyleSheet.create({
   },
   floatingText: {
     fontSize: 16,
+    color: "#9c7866"
   },
 
 });

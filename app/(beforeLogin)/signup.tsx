@@ -50,7 +50,7 @@ export default function Signup() {
         ]);
 
         alert("회원가입 완료");
-        router.replace("/login");
+        router.back();
     };
 
 

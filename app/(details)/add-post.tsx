@@ -164,7 +164,7 @@ export default function AddPost() {
         setImages([]);
 
         Alert.alert("성공", "게시물이 등록되었습니다!");
-        router.replace("/post");
+        router.back();
     };
 
 
