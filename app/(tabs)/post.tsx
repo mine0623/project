@@ -4,9 +4,10 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   FlatList,
   Image,
+  ScrollView,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -18,7 +19,6 @@ export default function Post() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [sortOption, setSortOption] = useState<"latest" | "popular">("latest");
 
-  // 🔹 탭 고정
   const tabs: string[] = ["전체", "추천", "질문"];
 
   useEffect(() => {
@@ -48,18 +48,11 @@ export default function Post() {
           avatar_url,
           birth_year
         ),
-        hearts (
-          user_id
-        ),
-        comments (
-          id
-        )
+        hearts (user_id),
+        comments (id)
       `);
 
-    // 🔹 탭 필터
     if (selectedTab !== "전체") query = query.contains("tags", [selectedTab]);
-
-    // 🔹 최신순 정렬
     if (sortOption === "latest") query = query.order("created_at", { ascending: false });
 
     const { data, error } = await query;
@@ -74,9 +67,9 @@ export default function Post() {
       profiles: post.profiles ?? null,
       hearts: Array.isArray(post.hearts) ? post.hearts : [],
       comments: Array.isArray(post.comments) ? post.comments : [],
+      images: Array.isArray(post.images) ? post.images : [],
     }));
 
-    // 🔹 인기순 정렬
     if (sortOption === "popular") {
       formatted = formatted.sort((a, b) => b.hearts.length - a.hearts.length);
     }
@@ -113,9 +106,18 @@ export default function Post() {
     return `${group}대`;
   };
 
+  const timeAgo = (date: string) => {
+    const diff = (new Date().getTime() - new Date(date).getTime()) / 1000;
+    if (diff < 60) return `${Math.floor(diff)}초 전`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+    return `${Math.floor(diff / 86400)}일 전`;
+  };
+
   const renderPost = ({ item }: { item: any }) => {
     const profile = item.profiles;
     const hasHeart = currentUser ? item.hearts.some((h: any) => h.user_id === currentUser.id) : false;
+    const images = item.images;
 
     return (
       <TouchableOpacity
@@ -128,6 +130,7 @@ export default function Post() {
         }
       >
         <View style={styles.post}>
+          {/* 상단 프로필 */}
           <View style={styles.postHeader}>
             <TouchableOpacity style={styles.profile}>
               {profile?.avatar_url ? (
@@ -145,30 +148,38 @@ export default function Post() {
             <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
           </View>
 
-          <View style={styles.tool}>
-            <View style={styles.main}>
-              <View style={styles.articles}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.text}>{item.content}</Text>
-              </View>
-              {item.images?.length > 0 ? (
-                <Image source={{ uri: Array.isArray(item.images) ? item.images[0] : item.images }} style={styles.img} resizeMode="cover" />
-              ) : (
-                <View style={styles.img}>
-                  <Ionicons name="image-outline" size={40} color="#f0f0e5" />
-                </View>
-              )}
-            </View>
-
-            <View style={styles.tags}>
-              {item.tags?.map((tag: string, index: number) => (
-                <Text key={index} style={styles.tag}>
-                  #{tag}
-                </Text>
-              ))}
-            </View>
+          {/* 제목 + 내용 */}
+          <View style={styles.articles}>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.text}>{item.content}</Text>
           </View>
 
+          {/* 이미지 가로 스크롤 */}
+          {images.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.imageScroll}
+            >
+              {images.map((img: string, idx: number) => (
+                <Image
+                  key={idx}
+                  source={{ uri: img }}
+                  style={styles.imageItem}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+          )}
+
+          {/* 태그 */}
+          <View style={styles.tags}>
+            {item.tags?.map((tag: string, index: number) => (
+              <Text key={index} style={styles.tag}>#{tag}</Text>
+            ))}
+          </View>
+
+          {/* 좋아요/댓글 */}
           <View style={styles.icons}>
             <View style={styles.icon}>
               <TouchableOpacity onPress={() => toggleHeart(item.id)}>
@@ -192,24 +203,9 @@ export default function Post() {
     );
   };
 
-  const timeAgo = (date: string) => {
-    const diff = (new Date().getTime() - new Date(date).getTime()) / 1000;
-    if (diff < 60) return `${Math.floor(diff)}초 전`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-    return `${Math.floor(diff / 86400)}일 전`;
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>mine</Text>
-        <TouchableOpacity onPress={() => router.push("/search")}>
-          <Ionicons name="search" size={25} color="#f0f0e5" />
-        </TouchableOpacity>
-      </View>
-
-      {/* 🔹 고정 탭 */}
+      {/* 탭 */}
       <View style={styles.tabContainer}>
         {tabs.map((tab) => (
           <TouchableOpacity
@@ -234,7 +230,6 @@ export default function Post() {
             최신순
           </Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.sortButton, sortOption === "popular" && styles.sortSelected]}
           onPress={() => setSortOption("popular")}
@@ -251,48 +246,39 @@ export default function Post() {
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
       />
-
-      <TouchableOpacity style={styles.floatingTextButton} onPress={() => router.push("/add-post")}>
-        <Text style={styles.floatingText}>글쓰기</Text>
-        <Ionicons name="pencil" size={15} color="#9c7866" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
-// 스타일은 그대로
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#9c7866" },
-  header: { flexDirection: "row", justifyContent: "space-between", margin: 30 },
-  logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold" },
-  tabContainer: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginLeft: 25 },
+  tabContainer: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginLeft: 20, marginTop: 10 },
   tabButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: '#f0f0e5' },
   tabButtonSelected: { backgroundColor: "#f0f0e5" },
   tabText: { color: '#f0f0e5' },
   tabTextSelected: { color: "#9c7866", fontWeight: 'bold' },
-  sortContainer: { flexDirection: "row", marginHorizontal: 30, marginTop: 20, marginBottom: 10, gap: 8 },
+
+  sortContainer: { flexDirection: "row", marginHorizontal: 20, marginVertical: 10, gap: 8 },
   sortButton: {},
   sortSelected: {},
   sortText: { color: "rgba(240, 240, 229, 0.5)" },
   sortTextSelected: { color: "#f0f0e5" },
+
+  post: { marginTop: 15, flexDirection: "column", gap: 10 },
+  postHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 20 },
+  profile: { flexDirection: "row", gap: 5, alignItems: "center" },
   avatar: { width: 35, height: 35, borderRadius: 50 },
-  post: { marginTop: 25, flexDirection: 'column' },
-  tool: { flexDirection: 'column', justifyContent: 'flex-start', marginHorizontal: 20, gap: 5 },
-  main: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  img: { width: 80, height: 80, backgroundColor: '#bda08b', borderRadius: 8 },
-  postHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8 },
-  time: { color: 'rgba(240, 240, 229, 0.5)' },
-  articles: { gap: 5 },
-  profile: { marginLeft: 20, flexDirection: 'row', gap: 5, alignItems: 'center', marginBottom: 5 },
-  name: { fontSize: 20, color: '#f0f0e5', fontWeight: 'bold' },
-  title: { color: '#f0f0e5', fontSize: 18, fontWeight: 'bold' },
-  text: { color: '#f0f0e5', fontSize: 18 },
-  icons: { marginHorizontal: 20, marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  icon: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  count: { fontSize: 15, color: '#f0f0e5' },
-  tags: { marginTop: 5, flexDirection: 'row', gap: 8, alignItems: 'center' },
-  tag: { backgroundColor: '#bda08b', paddingHorizontal: 10, paddingVertical: 8, color: '#f0f0e5', borderRadius: 20 },
-  underline: { marginTop: 25, borderBottomWidth: 1, borderColor: 'rgba(240, 240, 229, 0.5)' },
-  floatingTextButton: { flexDirection: 'row', position: "absolute", bottom: 40, alignSelf: "center", paddingHorizontal: 20, paddingVertical: 10, backgroundColor: "#f0f0e5", borderRadius: 20, justifyContent: "center", alignItems: "center", gap: 5 },
-  floatingText: { fontSize: 16, color: "#9c7866" },
+  name: { fontSize: 20, color: "#f0f0e5", fontWeight: "bold" },
+  time: { color: "rgba(240, 240, 229, 0.5)" },
+  articles: { gap: 5, marginHorizontal: 20 },
+  title: { color: "#f0f0e5", fontSize: 18, fontWeight: "bold" },
+  text: { color: "#f0f0e5", fontSize: 18 },
+  imageScroll: { marginHorizontal: 20, marginTop: 5 },
+  imageItem: { width: 150, height: 150, borderRadius: 8, marginRight: 10 },
+  tags: { marginHorizontal: 20, flexDirection: "row", gap: 8, marginTop: 5 },
+  tag: { backgroundColor: "#bda08b", paddingHorizontal: 10, paddingVertical: 8, color: "#f0f0e5", borderRadius: 20 },
+  icons: { marginHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 10, marginTop: 5 },
+  icon: { flexDirection: "row", alignItems: "center", gap: 5 },
+  count: { fontSize: 15, color: "#f0f0e5" },
+  underline: { borderBottomWidth: 1, borderColor: "rgba(240, 240, 229, 0.5)", marginTop: 10 },
 });
