@@ -18,7 +18,8 @@ export default function Post() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [sortOption, setSortOption] = useState<"latest" | "popular">("latest");
 
-  const tabs = ["전체", "추천", "질문"];
+  // 🔹 탭 고정
+  const tabs: string[] = ["전체", "추천", "질문"];
 
   useEffect(() => {
     getCurrentUser();
@@ -55,7 +56,10 @@ export default function Post() {
         )
       `);
 
+    // 🔹 탭 필터
     if (selectedTab !== "전체") query = query.contains("tags", [selectedTab]);
+
+    // 🔹 최신순 정렬
     if (sortOption === "latest") query = query.order("created_at", { ascending: false });
 
     const { data, error } = await query;
@@ -72,6 +76,7 @@ export default function Post() {
       comments: Array.isArray(post.comments) ? post.comments : [],
     }));
 
+    // 🔹 인기순 정렬
     if (sortOption === "popular") {
       formatted = formatted.sort((a, b) => b.hearts.length - a.hearts.length);
     }
@@ -204,7 +209,7 @@ export default function Post() {
         </TouchableOpacity>
       </View>
 
-      {/* 탭 */}
+      {/* 🔹 고정 탭 */}
       <View style={styles.tabContainer}>
         {tabs.map((tab) => (
           <TouchableOpacity
@@ -255,170 +260,39 @@ export default function Post() {
   );
 }
 
+// 스타일은 그대로
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#9c7866",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    margin: 30,
-  },
-  logo: {
-    color: "#f0f0e5",
-    fontSize: 30,
-    fontWeight: "bold",
-  },
-  tabContainer: {
-    flexDirection: "row",
-    justifyContent: 'flex-start',
-    gap: 10,
-    marginLeft: 25
-  },
-  tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#f0f0e5',
-  },
-  tabButtonSelected: {
-    backgroundColor: "#f0f0e5",
-  },
-  tabText: {
-    color: '#f0f0e5',
-  },
-  tabTextSelected: {
-    color: "#9c7866",
-    fontWeight: 'bold'
-  },
-  sortContainer: {
-    flexDirection: "row",
-    marginHorizontal: 30,
-    marginTop: 20,
-    marginBottom: 10,
-    gap: 8,
-  },
-  sortButton: {
-  },
-  sortSelected: {
-  },
-  sortText: {
-    color: "rgba(240, 240, 229, 0.5)",
-  },
-  sortTextSelected: {
-    color: "#f0f0e5",
-  },
-  avatar: {
-    width: 35,
-    height: 35,
-    borderRadius: 50
-  },
-  post: {
-    marginTop: 25,
-    flexDirection: 'column'
-  },
-  tool: {
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
-    marginHorizontal: 20,
-    gap: 5,
-  },
-  main: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start'
-  },
-  img: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#bda08b',
-    borderRadius: 8,
-  },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 8,
-  },
-  time: {
-    color: 'rgba(240, 240, 229, 0.5)'
-  },
-  articles: {
-    gap: 5,
-  },
-  profile: {
-    marginLeft: 20,
-    flexDirection: 'row',
-    gap: 5,
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  name: {
-    fontSize: 20,
-    color: '#f0f0e5',
-    fontWeight: 'bold'
-  },
-  title: {
-    color: '#f0f0e5',
-    fontSize: 18,
-    fontWeight: 'bold'
-  },
-  text: {
-    color: '#f0f0e5',
-    fontSize: 18,
-  },
-  icons: {
-    marginHorizontal: 20,
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  icon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5
-  },
-  count: {
-    fontSize: 15,
-    color: '#f0f0e5'
-  },
-  tags: {
-    marginTop: 5,
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center'
-  },
-  tag: {
-    backgroundColor: '#bda08b',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    color: '#f0f0e5',
-    borderRadius: 20,
-  },
-  underline: {
-    marginTop: 25,
-    borderBottomWidth: 1,
-    borderColor: 'rgba(240, 240, 229, 0.5)'
-  },
-  floatingTextButton: {
-    flexDirection: 'row',
-    position: "absolute",
-    bottom: 40,
-    alignSelf: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: "#f0f0e5",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 5,
-  },
-  floatingText: {
-    fontSize: 16,
-    color: "#9c7866"
-  },
-
+  container: { flex: 1, backgroundColor: "#9c7866" },
+  header: { flexDirection: "row", justifyContent: "space-between", margin: 30 },
+  logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold" },
+  tabContainer: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginLeft: 25 },
+  tabButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: '#f0f0e5' },
+  tabButtonSelected: { backgroundColor: "#f0f0e5" },
+  tabText: { color: '#f0f0e5' },
+  tabTextSelected: { color: "#9c7866", fontWeight: 'bold' },
+  sortContainer: { flexDirection: "row", marginHorizontal: 30, marginTop: 20, marginBottom: 10, gap: 8 },
+  sortButton: {},
+  sortSelected: {},
+  sortText: { color: "rgba(240, 240, 229, 0.5)" },
+  sortTextSelected: { color: "#f0f0e5" },
+  avatar: { width: 35, height: 35, borderRadius: 50 },
+  post: { marginTop: 25, flexDirection: 'column' },
+  tool: { flexDirection: 'column', justifyContent: 'flex-start', marginHorizontal: 20, gap: 5 },
+  main: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  img: { width: 80, height: 80, backgroundColor: '#bda08b', borderRadius: 8 },
+  postHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8 },
+  time: { color: 'rgba(240, 240, 229, 0.5)' },
+  articles: { gap: 5 },
+  profile: { marginLeft: 20, flexDirection: 'row', gap: 5, alignItems: 'center', marginBottom: 5 },
+  name: { fontSize: 20, color: '#f0f0e5', fontWeight: 'bold' },
+  title: { color: '#f0f0e5', fontSize: 18, fontWeight: 'bold' },
+  text: { color: '#f0f0e5', fontSize: 18 },
+  icons: { marginHorizontal: 20, marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  icon: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  count: { fontSize: 15, color: '#f0f0e5' },
+  tags: { marginTop: 5, flexDirection: 'row', gap: 8, alignItems: 'center' },
+  tag: { backgroundColor: '#bda08b', paddingHorizontal: 10, paddingVertical: 8, color: '#f0f0e5', borderRadius: 20 },
+  underline: { marginTop: 25, borderBottomWidth: 1, borderColor: 'rgba(240, 240, 229, 0.5)' },
+  floatingTextButton: { flexDirection: 'row', position: "absolute", bottom: 40, alignSelf: "center", paddingHorizontal: 20, paddingVertical: 10, backgroundColor: "#f0f0e5", borderRadius: 20, justifyContent: "center", alignItems: "center", gap: 5 },
+  floatingText: { fontSize: 16, color: "#9c7866" },
 });

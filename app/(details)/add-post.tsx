@@ -10,15 +10,27 @@ import { decode as decodeBase64 } from "base64-arraybuffer";
 export default function AddPost() {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
+    const [tags, setTags] = useState<string[]>(["여름", "추천", "질문", "룩북"]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [newTag, setNewTag] = useState("");
     const [images, setImages] = useState<{ uri: string; base64: string | null }[]>([]);
-
-    const tags = ["추천", "질문"];
 
     const toggleTag = (tag: string) => {
         setSelectedTags(prev =>
             prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
         );
+    };
+
+    const addTag = () => {
+        const tag = newTag.trim();
+        if (!tag) return;
+        if (!tags.includes(tag)) {
+            setTags(prev => [...prev, tag]);
+        }
+        if (!selectedTags.includes(tag)) {
+            setSelectedTags(prev => [...prev, tag]);
+        }
+        setNewTag("");
     };
 
     const pickImage = async () => {
@@ -143,7 +155,7 @@ export default function AddPost() {
 
         const { error } = await supabase.from("posts").insert([
             {
-                user_id: user.id, // ✅ 추가
+                user_id: user.id,
                 title,
                 content,
                 tags: selectedTags,
@@ -162,11 +174,11 @@ export default function AddPost() {
         setContent("");
         setSelectedTags([]);
         setImages([]);
+        setNewTag("");
 
         Alert.alert("성공", "게시물이 등록되었습니다!");
         router.back();
     };
-
 
     return (
         <SafeAreaView style={styles.container}>
@@ -175,6 +187,7 @@ export default function AddPost() {
                     <AntDesign name="close" size={30} color="#f0f0e5" />
                 </TouchableOpacity>
             </View>
+
             <View style={styles.main}>
                 <TextInput
                     style={styles.title}
@@ -191,36 +204,48 @@ export default function AddPost() {
                     maxLength={150}
                 />
 
-                <View style={styles.tags}>
-                    {tags.map(tag => {
-                        const selected = selectedTags.includes(tag);
-                        return (
-                            <TouchableOpacity
-                                key={tag}
-                                style={[
-                                    styles.tag,
-                                    selected && styles.tagSelected
-                                ]}
-                                onPress={() => toggleTag(tag)}
-                            >
-                                <Text style={[styles.tagText, selected && styles.tagTextSelected]}>
-                                    #{tag}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
+                {/* 태그 선택 및 추가 */}
+                <View style={{ gap: 10 }}>
+                    <View style={styles.tags}>
+                        {tags.map(tag => {
+                            const selected = selectedTags.includes(tag);
+                            return (
+                                <TouchableOpacity
+                                    key={tag}
+                                    style={[styles.tag, selected && styles.tagSelected]}
+                                    onPress={() => toggleTag(tag)}
+                                >
+                                    <Text style={[styles.tagText, selected && styles.tagTextSelected]}>
+                                        #{tag}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+
+                    <View style={styles.addTagContainer}>
+                        <TextInput
+                            style={styles.addTagInput}
+                            placeholder="새 태그 입력"
+                            value={newTag}
+                            onChangeText={setNewTag}
+                            onSubmitEditing={addTag}
+                        />
+                        <TouchableOpacity onPress={addTag} style={styles.addTagButton}>
+                            <Text style={{ color: "#f0f0e5" }}>추가</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
+
                 {images.length < 5 && (
                     <TouchableOpacity style={styles.box} onPress={pickImage}>
                         <Text style={styles.tagText}>image</Text>
                     </TouchableOpacity>
                 )}
             </View>
+
             <View style={styles.imags}>
-                <ScrollView
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                >
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {images.map((imgObj, index) => (
                         <TouchableOpacity key={index} onPress={() => removeImage(index)} style={{ marginRight: 8 }}>
                             <Image source={{ uri: imgObj.uri }} style={styles.image} />
@@ -232,100 +257,27 @@ export default function AddPost() {
                     <Text style={styles.buttonText}>post</Text>
                 </TouchableOpacity>
             </View>
-
         </SafeAreaView>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#9c7866",
-    },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        margin: 30,
-    },
-    logo: {
-        color: "#f0f0e5",
-        fontSize: 30,
-        fontWeight: "bold",
-    },
-    main: {
-        marginTop: 20,
-        gap: 10,
-        marginHorizontal: 25,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#f0f0e5',
-        borderBottomWidth: 1,
-        paddingBottom: 10,
-        borderColor: 'rgba(240, 240, 229, 0.5)'
-    },
-    text: {
-        height: 120,
-        padding: 10,
-        borderRadius: 8,
-        backgroundColor: 'rgba(240, 240, 230, 0.05)',
-        color: '#f0f0e5',
-        fontSize: 18,
-    },
-    tags: {
-        flexDirection: 'row',
-        gap: 10,
-        alignItems: 'center'
-    },
-    tag: {
-        borderWidth: 1,
-        borderColor: 'rgba(240, 240, 229, 0.5)',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-    },
-    tagSelected: {
-        backgroundColor: "#f0f0e5"
-    },
-    tagText: {
-        color: "#f0f0e5",
-    },
-    tagTextSelected: {
-        color: "#b7aa93",
-        fontWeight: "bold"
-    },
-
-    imags: {
-        marginHorizontal: 25,
-        marginTop: 20,
-    },
-    image: {
-        width: 80,
-        height: 80,
-        marginRight: 8,
-        borderRadius: 8,
-    },
-    box: {
-        marginTop: 10,
-        backgroundColor: 'rgba(240, 240, 229, 0.3)',
-        width: 80,
-        height: 80,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    button: {
-        marginTop: 20,
-        backgroundColor: '#f0f0e5',
-        paddingVertical: 15,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#9c7866',
-    },
-})
+    container: { flex: 1, backgroundColor: "#9c7866" },
+    header: { flexDirection: "row", justifyContent: "space-between", margin: 30 },
+    main: { marginTop: 20, gap: 10, marginHorizontal: 25 },
+    title: { fontSize: 20, fontWeight: 'bold', color: '#f0f0e5', borderBottomWidth: 1, paddingBottom: 10, borderColor: 'rgba(240, 240, 229, 0.5)' },
+    text: { height: 120, padding: 10, borderRadius: 8, backgroundColor: 'rgba(240, 240, 230, 0.05)', color: '#f0f0e5', fontSize: 18 },
+    tags: { flexDirection: 'row', gap: 10, flexWrap: "wrap" },
+    tag: { borderWidth: 1, borderColor: 'rgba(240, 240, 229, 0.5)', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20 },
+    tagSelected: { backgroundColor: "#f0f0e5" },
+    tagText: { color: "#f0f0e5" },
+    tagTextSelected: { color: "#b7aa93", fontWeight: "bold" },
+    addTagContainer: { flexDirection: "row", marginTop: 8, alignItems: "center" },
+    addTagInput: { flex: 1, borderWidth: 1, borderColor: "rgba(240,240,229,0.5)", borderRadius: 20, paddingHorizontal: 12, color: "#f0f0e5", height: 40 },
+    addTagButton: { marginLeft: 8, backgroundColor: "rgba(240,240,229,0.5)", paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, justifyContent: "center", alignItems: "center" },
+    imags: { marginHorizontal: 25, marginTop: 20 },
+    image: { width: 80, height: 80, marginRight: 8, borderRadius: 8 },
+    box: { marginTop: 10, backgroundColor: 'rgba(240, 240, 229, 0.3)', width: 80, height: 80, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    button: { marginTop: 20, backgroundColor: '#f0f0e5', paddingVertical: 15, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    buttonText: { fontSize: 16, fontWeight: 'bold', color: '#9c7866' },
+});
