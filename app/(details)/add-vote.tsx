@@ -380,8 +380,6 @@ const styles = StyleSheet.create({
   },
   wishlistCard: {
     width: 100,
-    borderRadius: 8,
-    overflow: "hidden",
     marginRight: 10,
   },
   wishlistCardSelected: {
@@ -394,7 +392,6 @@ const styles = StyleSheet.create({
   },
   wishlistInfo: {
     padding: 4,
-    backgroundColor: "#85665b"
   },
   wishlistName: {
     color: "#f0f0e5",

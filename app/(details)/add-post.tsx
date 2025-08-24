@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { router } from "expo-router";
 import { SafeAreaView, View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Image, Alert } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
@@ -14,6 +14,25 @@ export default function AddPost() {
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [newTag, setNewTag] = useState("");
     const [images, setImages] = useState<{ uri: string; base64: string | null }[]>([]);
+    const [wishlist, setWishlist] = useState<any[]>([]);
+    const [selectedWishlist, setSelectedWishlist] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchWishlist = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data, error } = await supabase
+                .from("wishlist")
+                .select("*")
+                .eq("user_id", user.id);
+
+            if (error) console.error(error);
+            else setWishlist(data ?? []);
+        };
+        fetchWishlist();
+    }, []);
+
 
     const toggleTag = (tag: string) => {
         setSelectedTags(prev =>
@@ -53,6 +72,16 @@ export default function AddPost() {
             setImages(prev => [...prev, ...newImages]);
         }
     };
+
+    const toggleWishlist = (item: any) => {
+        const alreadySelected = selectedWishlist.some(w => w.id === item.id);
+        if (alreadySelected) {
+            setSelectedWishlist(prev => prev.filter(w => w.id !== item.id));
+        } else {
+            setSelectedWishlist(prev => [...prev, item]);
+        }
+    };
+
 
     const removeImage = (index: number) => {
         setImages(prev => prev.filter((_, i) => i !== index));
@@ -245,18 +274,54 @@ export default function AddPost() {
             </View>
 
             <View style={styles.imags}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ flexDirection: "row", alignItems: "center" }}
+                >
                     {images.map((imgObj, index) => (
-                        <TouchableOpacity key={index} onPress={() => removeImage(index)} style={{ marginRight: 8 }}>
+                        <TouchableOpacity key={index} onPress={() => removeImage(index)}>
                             <Image source={{ uri: imgObj.uri }} style={styles.image} />
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
-
-                <TouchableOpacity style={styles.button} onPress={submitPost}>
-                    <Text style={styles.buttonText}>post</Text>
-                </TouchableOpacity>
             </View>
+
+
+            <View style={{ marginTop: 20 }}>
+                <Text style={{ color: "#f0f0e5", fontSize: 16, marginBottom: 10 }}>wishlist</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {wishlist.map(item => {
+                        const isSelected = selectedWishlist.some(w => w.id === item.id);
+                        return (
+                            <TouchableOpacity
+                                key={item.id}
+                                onPress={() => toggleWishlist(item)}
+                                style={{
+                                    borderWidth: 2,
+                                    borderColor: isSelected ? "#f0f0e5" : "transparent",
+                                    borderRadius: 10,
+                                    marginRight: 10,
+                                    overflow: "hidden",
+                                    width: 120,
+                                }}
+                            >
+                                <Image source={{ uri: item.image }} style={{ width: 120, height: 120 }} />
+                                <View style={{ padding: 5 }}>
+                                    <Text numberOfLines={1} style={{ color: "#f0f0e5", fontSize: 12 }}>{item.brand}</Text>
+                                    <Text numberOfLines={1} style={{ color: "#f0f0e5", fontSize: 12 }}>{item.name}</Text>
+                                    <Text style={{ color: "#f0f0e5", fontSize: 12 }}>{item.price}원</Text>
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+            </View>
+
+
+            <TouchableOpacity style={styles.button} onPress={submitPost}>
+                <Text style={styles.buttonText}>post</Text>
+            </TouchableOpacity>
         </SafeAreaView>
     );
 }

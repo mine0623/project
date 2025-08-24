@@ -108,10 +108,10 @@ export default function Post() {
 
   const timeAgo = (date: string) => {
     const diff = (new Date().getTime() - new Date(date).getTime()) / 1000;
-    if (diff < 60) return `${Math.floor(diff)}초 전`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-    return `${Math.floor(diff / 86400)}일 전`;
+    if (diff < 60) return `${Math.floor(diff)}초전`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}분전`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간전`;
+    return `${Math.floor(diff / 86400)}일전`;
   };
 
   const renderPost = ({ item }: { item: any }) => {
@@ -130,7 +130,6 @@ export default function Post() {
         }
       >
         <View style={styles.post}>
-          {/* 상단 프로필 */}
           <View style={styles.postHeader}>
             <TouchableOpacity style={styles.profile}>
               {profile?.avatar_url ? (
@@ -148,13 +147,6 @@ export default function Post() {
             <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
           </View>
 
-          {/* 제목 + 내용 */}
-          <View style={styles.articles}>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.text}>{item.content}</Text>
-          </View>
-
-          {/* 이미지 가로 스크롤 */}
           {images.length > 0 && (
             <ScrollView
               horizontal
@@ -172,14 +164,17 @@ export default function Post() {
             </ScrollView>
           )}
 
-          {/* 태그 */}
+          <View style={styles.articles}>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.text}>{item.content}</Text>
+          </View>
+
           <View style={styles.tags}>
             {item.tags?.map((tag: string, index: number) => (
               <Text key={index} style={styles.tag}>#{tag}</Text>
             ))}
           </View>
 
-          {/* 좋아요/댓글 */}
           <View style={styles.icons}>
             <View style={styles.icon}>
               <TouchableOpacity onPress={() => toggleHeart(item.id)}>
@@ -205,7 +200,12 @@ export default function Post() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 탭 */}
+      <View style={styles.header}>
+        <Text style={styles.logo}>mine</Text>
+        <TouchableOpacity onPress={() => router.push('/search')}>
+          <Ionicons name="search" size={25} color="#f0f0e5" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.tabContainer}>
         {tabs.map((tab) => (
           <TouchableOpacity
@@ -220,7 +220,6 @@ export default function Post() {
         ))}
       </View>
 
-      {/* 정렬 */}
       <View style={styles.sortContainer}>
         <TouchableOpacity
           style={[styles.sortButton, sortOption === "latest" && styles.sortSelected]}
@@ -246,12 +245,20 @@ export default function Post() {
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
       />
+
+      <TouchableOpacity style={styles.floatingTextButton} onPress={() => router.push("/add-post")}>
+        <Text style={styles.floatingText}>글쓰기</Text>
+        <Ionicons name="pencil" size={15} color="#9c7866" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#9c7866" },
+  header: { flexDirection: "row", justifyContent: "space-between", margin: 30, marginBottom: 10 },
+  logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold" },
+
   tabContainer: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginLeft: 20, marginTop: 10 },
   tabButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: '#f0f0e5' },
   tabButtonSelected: { backgroundColor: "#f0f0e5" },
@@ -274,11 +281,13 @@ const styles = StyleSheet.create({
   title: { color: "#f0f0e5", fontSize: 18, fontWeight: "bold" },
   text: { color: "#f0f0e5", fontSize: 18 },
   imageScroll: { marginHorizontal: 20, marginTop: 5 },
-  imageItem: { width: 150, height: 150, borderRadius: 8, marginRight: 10 },
+  imageItem: { width: 200, height: 200, borderRadius: 8, marginRight: 10 },
   tags: { marginHorizontal: 20, flexDirection: "row", gap: 8, marginTop: 5 },
   tag: { backgroundColor: "#bda08b", paddingHorizontal: 10, paddingVertical: 8, color: "#f0f0e5", borderRadius: 20 },
   icons: { marginHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 10, marginTop: 5 },
   icon: { flexDirection: "row", alignItems: "center", gap: 5 },
   count: { fontSize: 15, color: "#f0f0e5" },
   underline: { borderBottomWidth: 1, borderColor: "rgba(240, 240, 229, 0.5)", marginTop: 10 },
+  floatingTextButton: { flexDirection: 'row', position: "absolute", bottom: 40, alignSelf: "center", paddingHorizontal: 20, paddingVertical: 10, backgroundColor: "#f0f0e5", borderRadius: 20, justifyContent: "center", alignItems: "center", gap: 5, },
+  floatingText: { fontSize: 16, color: "#9c7866" },
 });

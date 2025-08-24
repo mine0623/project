@@ -263,7 +263,6 @@ export default function Profile() {
         </View>
     );
 
-    // --- 투표 뷰 ---
     const VoteView = () => {
         if (loadingVotes) {
             return (

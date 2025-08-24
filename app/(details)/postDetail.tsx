@@ -9,13 +9,15 @@ import {
     TouchableOpacity,
     TextInput,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Alert
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { router } from "expo-router";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import ImageViewing from "react-native-image-viewing";
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 export default function PostDetail() {
     const params = useLocalSearchParams<{ post: string | string[] }>();
@@ -137,177 +139,210 @@ export default function PostDetail() {
             ? [{ uri: currentPost.images }]
             : [];
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={0}
-            >
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <AntDesign name="close" size={30} color="#f0f0e5" />
-                    </TouchableOpacity>
-                    <TouchableOpacity>
-                        <Ionicons name="trash" size={30} color="#f0f0e5" />
-                    </TouchableOpacity>
-                </View>
-                <ScrollView style={{ flex: 1 }}>
-                    <View style={styles.post}>
-                        {/* 헤더 */}
-                        <View style={styles.postHeader}>
-                            {profile?.avatar_url ? (
-                                <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-                            ) : (
-                                <Ionicons name="person-circle-sharp" size={50} color="#b7aa93" />
-                            )}
-                            <Text style={styles.name}>{profile?.name || "익명"}</Text>
-                            <Text style={styles.time}>
-                                {getAgeGroup(profile?.birth_year)} | {profile?.gender || "성별 없음"} |{" "}
-                                {timeAgo(currentPost.created_at)}
-                            </Text>
-                        </View>
+    const deletePost = async () => {
+        const { error } = await supabase
+            .from("posts")
+            .delete()
+            .eq("id", currentPost.id);
 
-                        {/* 제목 + 내용 */}
-                        <View style={styles.tool}>
-                            <View style={styles.articles}>
-                                <Text style={styles.title}>{currentPost.title}</Text>
-                                <Text style={styles.text}>{currentPost.content}</Text>
-                            </View>
+        if (error) {
+            console.error(error);
+            Alert.alert("오류", "게시물 삭제에 실패했습니다.");
+        } else {
+            Alert.alert("완료", "게시물이 삭제되었습니다.");
+            router.back();
+        }
+    }
 
-                            {/* 이미지 여러 장 */}
-                            {currentPost.images?.length > 0 && (
-                                <ScrollView horizontal style={styles.images} showsHorizontalScrollIndicator={false}>
-                                    {Array.isArray(currentPost.images)
-                                        ? currentPost.images.map((img: string, i: number) => (
-                                            <TouchableOpacity
-                                                key={i}
-                                                onPress={() => {
-                                                    setSelectedIndex(i);
-                                                    setIsVisible(true);
-                                                }}
-                                            >
-                                                <Image source={{ uri: img }} style={styles.imageItem} />
-                                            </TouchableOpacity>
-                                        ))
-                                        : (
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    setSelectedIndex(0);
-                                                    setIsVisible(true);
-                                                }}
-                                            >
-                                                <Image source={{ uri: currentPost.images }} style={styles.imageItem} />
-                                            </TouchableOpacity>
-                                        )}
-                                </ScrollView>
-                            )}
-                        </View>
-
-                        <ImageViewing
-                            images={images}
-                            imageIndex={selectedIndex}
-                            visible={isVisible}
-                            onRequestClose={() => setIsVisible(false)}
-                            backgroundColor="black"
-                        />
-
-                        <View style={styles.icons}>
-                            <TouchableOpacity style={styles.icon} onPress={toggleHeart}>
-                                <Ionicons
-                                    name="heart"
-                                    size={27}
-                                    color={hasHeart ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"}
-                                />
-                                <Text style={styles.count}>{currentPost.hearts.length}</Text>
+        return (
+            <SafeAreaView style={styles.container}>
+                <KeyboardAvoidingView
+                    style={{ flex: 1 }}
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    keyboardVerticalOffset={0}
+                >
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={() => router.back()}>
+                            <AntDesign name="close" size={30} color="#f0f0e5" />
+                        </TouchableOpacity>
+                        {currentUser?.id === currentPost.profiles?.id && (
+                            <TouchableOpacity
+                                onPress={() =>
+                                    Alert.alert(
+                                        "게시물 삭제",
+                                        "정말 삭제하시겠습니까?",
+                                        [
+                                            { text: "취소", style: "cancel" },
+                                            {
+                                                text: "삭제",
+                                                style: "destructive",
+                                                onPress: deletePost, // 여기서 위 deletePost 실행
+                                            },
+                                        ],
+                                        { cancelable: true }
+                                    )
+                                }
+                            >
+                                <FontAwesome6 name="trash" size={25} color="#f0f0e5" />
                             </TouchableOpacity>
+                        )}
+                    </View>
+                    <ScrollView style={{ flex: 1 }}>
+                        <View style={styles.post}>
+                            {/* 헤더 */}
+                            <View style={styles.postHeader}>
+                                {profile?.avatar_url ? (
+                                    <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+                                ) : (
+                                    <Ionicons name="person-circle-sharp" size={50} color="#b7aa93" />
+                                )}
+                                <Text style={styles.name}>{profile?.name || "익명"}</Text>
+                                <Text style={styles.time}>
+                                    {getAgeGroup(profile?.birth_year)} | {profile?.gender || "성별 없음"} |{" "}
+                                    {timeAgo(currentPost.created_at)}
+                                </Text>
+                            </View>
 
-                            <View style={styles.icon}>
-                                <Ionicons name="chatbox" size={27} color="#dfc8ba" />
-                                <Text style={styles.count}>{currentPost.comments.length}</Text>
+                            {/* 제목 + 내용 */}
+                            <View style={styles.tool}>
+                                <View style={styles.articles}>
+                                    <Text style={styles.title}>{currentPost.title}</Text>
+                                    <Text style={styles.text}>{currentPost.content}</Text>
+                                </View>
+
+                                {/* 이미지 여러 장 */}
+                                {currentPost.images?.length > 0 && (
+                                    <ScrollView horizontal style={styles.images} showsHorizontalScrollIndicator={false}>
+                                        {Array.isArray(currentPost.images)
+                                            ? currentPost.images.map((img: string, i: number) => (
+                                                <TouchableOpacity
+                                                    key={i}
+                                                    onPress={() => {
+                                                        setSelectedIndex(i);
+                                                        setIsVisible(true);
+                                                    }}
+                                                >
+                                                    <Image source={{ uri: img }} style={styles.imageItem} />
+                                                </TouchableOpacity>
+                                            ))
+                                            : (
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        setSelectedIndex(0);
+                                                        setIsVisible(true);
+                                                    }}
+                                                >
+                                                    <Image source={{ uri: currentPost.images }} style={styles.imageItem} />
+                                                </TouchableOpacity>
+                                            )}
+                                    </ScrollView>
+                                )}
+                            </View>
+
+                            <ImageViewing
+                                images={images}
+                                imageIndex={selectedIndex}
+                                visible={isVisible}
+                                onRequestClose={() => setIsVisible(false)}
+                                backgroundColor="black"
+                            />
+
+                            <View style={styles.icons}>
+                                <TouchableOpacity style={styles.icon} onPress={toggleHeart}>
+                                    <Ionicons
+                                        name="heart"
+                                        size={27}
+                                        color={hasHeart ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"}
+                                    />
+                                    <Text style={styles.count}>{currentPost.hearts.length}</Text>
+                                </TouchableOpacity>
+
+                                <View style={styles.icon}>
+                                    <Ionicons name="chatbox" size={27} color="#dfc8ba" />
+                                    <Text style={styles.count}>{currentPost.comments.length}</Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.underline}></View>
+
+                            {/* 댓글 리스트 */}
+                            <View style={styles.commentsContainer}>
+                                <Text style={styles.commentHeader}>comment</Text>
+                                {currentPost.comments?.map((c: any, idx: number) => (
+                                    <View key={idx} style={styles.commentItem}>
+                                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                            {c.user_avatar ? (
+                                                <Image source={{ uri: c.user_avatar }} style={styles.commentAvatar} />
+                                            ) : (
+                                                <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
+                                            )}
+                                            <Text style={styles.commentName}>{c.user_name || "익명"}</Text>
+                                        </View>
+                                        <Text style={styles.commentText}>{c.content}</Text>
+                                    </View>
+                                ))}
                             </View>
                         </View>
+                    </ScrollView>
+                    <View style={styles.commentInputContainer}>
+                        <TextInput
+                            style={styles.commentInput}
+                            placeholder="댓글을 입력하세요..."
+                            value={newComment}
+                            onChangeText={setNewComment}
 
-                        <View style={styles.underline}></View>
-
-                        {/* 댓글 리스트 */}
-                        <View style={styles.commentsContainer}>
-                            <Text style={styles.commentHeader}>comment</Text>
-                            {currentPost.comments?.map((c: any, idx: number) => (
-                                <View key={idx} style={styles.commentItem}>
-                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                                        {c.user_avatar ? (
-                                            <Image source={{ uri: c.user_avatar }} style={styles.commentAvatar} />
-                                        ) : (
-                                            <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
-                                        )}
-                                        <Text style={styles.commentName}>{c.user_name || "익명"}</Text>
-                                    </View>
-                                    <Text style={styles.commentText}>{c.content}</Text>
-                                </View>
-                            ))}
-                        </View>
+                        />
+                        <TouchableOpacity onPress={addComment}>
+                            <Ionicons name="send" size={20} color="#f0f0e5" />
+                        </TouchableOpacity>
                     </View>
-                </ScrollView>
-                <View style={styles.commentInputContainer}>
-                    <TextInput
-                        style={styles.commentInput}
-                        placeholder="댓글을 입력하세요..."
-                        value={newComment}
-                        onChangeText={setNewComment}
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+        );
+    }
 
-                    />
-                    <TouchableOpacity onPress={addComment}>
-                        <Ionicons name="send" size={20} color="#f0f0e5" />
-                    </TouchableOpacity>
-                </View>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
-    );
-}
+    const styles = StyleSheet.create({
+        container: { flex: 1, backgroundColor: "#9c7866" },
+        header: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            margin: 30,
+            marginBottom: 10,
+        },
+        post: { marginTop: 25, flexDirection: "column", gap: 10 },
+        postHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 20 },
+        avatar: { width: 35, height: 35, borderRadius: 50 },
+        name: { fontSize: 20, color: "#f0f0e5", fontWeight: "bold" },
+        time: { color: "rgba(240, 240, 229, 0.5)" },
+        tool: { flexDirection: "column", justifyContent: "flex-start", marginHorizontal: 20, gap: 10 },
+        articles: { gap: 5 },
+        title: { color: "#f0f0e5", fontSize: 18, fontWeight: "bold" },
+        text: { color: "#f0f0e5", fontSize: 18 },
+        images: { flexDirection: "row" },
+        imageItem: { width: 150, height: 150, borderRadius: 10, marginRight: 10 },
+        icons: { marginHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 10 },
+        icon: { flexDirection: "row", alignItems: "center", gap: 5 },
+        count: { fontSize: 15, color: "#f0f0e5" },
+        underline: { borderBottomWidth: 1, borderColor: "rgba(240, 240, 229, 0.5)" },
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#9c7866" },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        margin: 30,
-        marginBottom: 10,
-    },
-    post: { marginTop: 25, flexDirection: "column", gap: 10 },
-    postHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 20 },
-    avatar: { width: 35, height: 35, borderRadius: 50 },
-    name: { fontSize: 20, color: "#f0f0e5", fontWeight: "bold" },
-    time: { color: "rgba(240, 240, 229, 0.5)" },
-    tool: { flexDirection: "column", justifyContent: "flex-start", marginHorizontal: 20, gap: 10 },
-    articles: { gap: 5 },
-    title: { color: "#f0f0e5", fontSize: 18, fontWeight: "bold" },
-    text: { color: "#f0f0e5", fontSize: 18 },
-    images: { flexDirection: "row" },
-    imageItem: { width: 150, height: 150, borderRadius: 10, marginRight: 10 },
-    icons: { marginHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 10 },
-    icon: { flexDirection: "row", alignItems: "center", gap: 5 },
-    count: { fontSize: 15, color: "#f0f0e5" },
-    underline: { borderBottomWidth: 1, borderColor: "rgba(240, 240, 229, 0.5)" },
+        commentsContainer: { marginHorizontal: 20, },
+        commentHeader: { fontSize: 25, fontWeight: "bold", color: "#f0f0e5", marginBottom: 20 },
+        commentItem: { flexDirection: "column", marginBottom: 20, gap: 10 },
+        commentName: { fontWeight: "bold", color: "#f0f0e5", fontSize: 18 },
+        commentText: { color: "#f0f0e5", fontSize: 15 },
 
-    commentsContainer: { marginHorizontal: 20, },
-    commentHeader: { fontSize: 25, fontWeight: "bold", color: "#f0f0e5", marginBottom: 20 },
-    commentItem: { flexDirection: "column", marginBottom: 20, gap: 10 },
-    commentName: { fontWeight: "bold", color: "#f0f0e5", fontSize: 18 },
-    commentText: { color: "#f0f0e5", fontSize: 15 },
-
-    commentInputContainer: {
-        flexDirection: 'row',
-        alignSelf: "stretch",
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        marginHorizontal: 20,
-        backgroundColor: "rgba(240, 240, 229, 0.3)",
-        borderRadius: 20,
-        justifyContent: "space-around",
-        alignItems: "center",
-        gap: 5,
-    },
-    commentInput: { flex: 1, color: "#f0f0e5", fontSize: 16 },
-    commentAvatar: { width: 35, height: 35, borderRadius: 50 },
-});
+        commentInputContainer: {
+            flexDirection: 'row',
+            alignSelf: "stretch",
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            marginHorizontal: 20,
+            backgroundColor: "rgba(240, 240, 229, 0.3)",
+            borderRadius: 20,
+            justifyContent: "space-around",
+            alignItems: "center",
+            gap: 5,
+        },
+        commentInput: { flex: 1, color: "#f0f0e5", fontSize: 16 },
+        commentAvatar: { width: 35, height: 35, borderRadius: 50 },
+    });
