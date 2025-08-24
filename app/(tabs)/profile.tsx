@@ -10,8 +10,8 @@ import {
     ScrollView,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import PostCard from "@/app/(details)/postCard";
 
 export default function Profile() {
     const [profile, setProfile] = useState<any | null>(null);
@@ -22,8 +22,8 @@ export default function Profile() {
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [selectedTab, setSelectedTab] = useState<"post" | "vote">("post");
     const [loadingVotes, setLoadingVotes] = useState(true);
+    const router = useRouter();
 
-    // 현재 사용자 + 프로필 불러오기
     useEffect(() => {
         const loadUserAndProfile = async () => {
             try {
@@ -61,7 +61,6 @@ export default function Profile() {
         loadUserAndProfile();
     }, []);
 
-    // 게시물 불러오기
     useEffect(() => {
         if (!currentUser) return;
 
@@ -93,7 +92,6 @@ export default function Profile() {
         fetchPosts();
     }, [currentUser]);
 
-    // 내 투표 불러오기 (vote_options 제거, vote_results 기반)
     useEffect(() => {
         if (!currentUser) return;
 
@@ -151,103 +149,21 @@ export default function Profile() {
         );
     }
 
-    const getAgeGroup = (birth_year: number | null) => {
-        if (!birth_year) return "연령대 없음";
-        const age = new Date().getFullYear() - birth_year;
-        const group = Math.floor(age / 10) * 10;
-        return `${group}대`;
+    const handlePostPress = (post: any) => {
+        router.push({
+            pathname: "/postDetail",
+            params: { post: JSON.stringify(post) },
+        });
     };
 
-    const timeAgo = (date: string) => {
-        const diff = (new Date().getTime() - new Date(date).getTime()) / 1000;
-        if (diff < 60) return `${Math.floor(diff)}초 전`;
-        if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-        return `${Math.floor(diff / 86400)}일 전`;
-    };
-
-    // --- 게시물 렌더 ---
     const renderPost = ({ item }: { item: any }) => {
-        const profile = item.profiles;
-        const hasHeart = currentUser ? item.hearts.some((h: any) => h.user_id === currentUser.id) : false;
-
-        const toggleHeart = async (postId: number) => {
-            const updatedPosts = [...posts];
-            const postIndex = updatedPosts.findIndex((p) => p.id === postId);
-            if (postIndex === -1) return;
-
-            const post = updatedPosts[postIndex];
-            const hasHeart = post.hearts.some((h: any) => h.user_id === currentUser.id);
-
-            if (hasHeart) {
-                post.hearts = post.hearts.filter((h: any) => h.user_id !== currentUser.id);
-                await supabase.from("hearts").delete().eq("post_id", postId).eq("user_id", currentUser.id);
-            } else {
-                post.hearts.push({ user_id: currentUser.id });
-                await supabase.from("hearts").insert([{ post_id: postId, user_id: currentUser.id }]);
-            }
-
-            setPosts(updatedPosts);
-        };
 
         return (
             <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => router.push({ pathname: "/postDetail", params: { post: JSON.stringify(item) } })}
+                onPress={() => handlePostPress(item)}
+                activeOpacity={0.8} // 터치 시 약간 투명해지는 효과
             >
-                <View style={styles.post}>
-                    <View style={styles.postHeader}>
-                        <TouchableOpacity style={styles.profile}>
-                            {profile?.avatar_url ? (
-                                <Image source={{ uri: profile.avatar_url }} style={styles.postAvatar} />
-                            ) : (
-                                <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
-                            )}
-                            <Text style={styles.postName}>{profile?.name || "익명"}</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.time}>{getAgeGroup(profile?.birth_year)}</Text>
-                        <Text style={styles.time}>|</Text>
-                        <Text style={styles.time}>{profile?.gender || "성별 없음"}</Text>
-                        <Text style={styles.time}>|</Text>
-                        <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
-                    </View>
-
-                    <View style={styles.tool}>
-                        <View style={styles.main}>
-                            <View style={styles.articles}>
-                                <Text style={styles.title}>{item.title}</Text>
-                                <Text style={styles.text}>{item.content}</Text>
-                            </View>
-                            {item.images?.length > 0 ? (
-                                <Image source={{ uri: Array.isArray(item.images) ? item.images[0] : item.images }} style={styles.img} resizeMode="cover" />
-                            ) : (
-                                <View style={styles.img}>
-                                    <Ionicons name="image-outline" size={40} color="#f0f0e5" />
-                                </View>
-                            )}
-                        </View>
-                        <View style={styles.tags}>
-                            {item.tags?.map((tag: string, idx: number) => (
-                                <Text key={idx} style={styles.tag}>#{tag}</Text>
-                            ))}
-                        </View>
-                    </View>
-
-                    <View style={styles.icons}>
-                        <View style={styles.icon}>
-                            <TouchableOpacity onPress={() => toggleHeart(item.id)}>
-                                <Ionicons name="heart" size={27} color={hasHeart ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"} />
-                            </TouchableOpacity>
-                            <Text style={styles.count}>{item.hearts.length}</Text>
-                        </View>
-                        <View style={styles.icon}>
-                            <Ionicons name="chatbox" size={27} color="#dfc8ba" />
-                            <Text style={styles.count}>{item.comments.length}</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.underline}></View>
-                </View>
+                <PostCard post={item} currentUser={currentUser} />
             </TouchableOpacity>
         );
     };

@@ -91,13 +91,12 @@ export default function Vote() {
             {
                 vote_id: currentVote.id,
                 choice: choice,
-                user_id: user.id, // ✅ user_id 포함
+                user_id: user.id,
             },
         ]);
         if (error) console.error(error);
     };
 
-    // 투표 결과 가져오기
     const fetchResults = async () => {
         const currentVote = votes[current];
         if (!currentVote) return;
@@ -127,14 +126,21 @@ export default function Vote() {
         setResults(resultsWithPercent);
     };
 
-    // 단일 선택
+    // 단일 선택 (살/말)
     const handleSelectSingle = async (choice: "살" | "말") => {
-        await saveVote(choice);
-        await fetchResults();
-        setShowResult(true);
+        await saveVote(choice);      // 투표 저장
+        await fetchResults();        // 결과 불러오기
+        setShowResult(true);         // 결과 표시
     };
 
-    const handleSelectMulti = (idx: number) => setSelected(idx);
+    // 다중 선택 (A/B)
+    const handleSelectMulti = async (idx: number) => {
+        setSelected(idx);            // 선택 강조
+        await saveVote(idx);         // 투표 저장
+        await fetchResults();        // 결과 불러오기
+        setShowResult(true);         // 결과 표시
+    };
+
 
     const submitMultiVote = async () => {
         if (selected === null) return;
@@ -148,25 +154,6 @@ export default function Vote() {
         setShowResult(false);
         if (current + 1 < votes.length) setCurrent(current + 1);
         else setCurrent(-1);
-    };
-
-    // 삭제 팝업
-    const deleteVote = (voteId: string) => {
-        Alert.alert("삭제 확인", "정말 삭제하시겠습니까?", [
-            { text: "취소", style: "cancel" },
-            {
-                text: "삭제",
-                style: "destructive",
-                onPress: async () => {
-                    const { error } = await supabase
-                        .from("votes")
-                        .delete()
-                        .eq("id", voteId);
-                    if (error) console.error(error);
-                    else fetchVotes();
-                },
-            },
-        ]);
     };
 
     if (loading)
@@ -204,102 +191,118 @@ export default function Vote() {
                 <Text style={styles.logo}>votes</Text>
             </View>
 
-            {/* 삭제 버튼 (본인 작성글만) */}
-            {currentUserId === vote.user_id && (
-                <TouchableOpacity
-                    style={{ position: "absolute", top: 50, right: 20 }}
-                    onPress={() => deleteVote(vote.id)}
-                >
-                    <FontAwesome6 name="trash" size={25} color="#f0f0e5" />
-                </TouchableOpacity>
-            )}
-
             <View style={styles.voteBox}>
-                {options.length === 1 ? (
-                    <Text style={styles.guideText}>살까? 말까?</Text>
-                ) : (
-                    <Text style={styles.guideText}>둘 중 골라줘</Text>
-                )}
+                <Text style={styles.guideText}>
+                    {options.length === 1 ? "살까? 말까?" : "둘 중 골라줘"}
+                </Text>
 
-                <Text style={styles.voteContent}>{vote.content}</Text>
+                <View style={styles.optionContainer}>
+                    <View style={styles.images}>
+                        {options.map((img: string, idx: number) => (
+                            <Image
+                                key={idx}
+                                source={{ uri: img }}
+                                style={options.length === 1 ? styles.singleImage : styles.voteImage}
+                            />
+                        ))}
+                    </View>
 
-                {/* 작성자 정보 */}
-                <View style={{ flexDirection: "row", gap: 5, marginTop: 5, alignItems: 'center' }}>
-                    <Text style={styles.time}>{getAgeGroup(vote.profiles?.birth_year)}</Text>
-                    <Text style={styles.time}>|</Text>
-                    <Text style={styles.time}>{vote.profiles?.gender || "성별 없음"}</Text>
+                    <Text style={styles.voteContent}>{vote.content}</Text>
+
+                    <View style={styles.info}>
+                        <Text style={styles.time}>{getAgeGroup(vote.profiles?.birth_year)}</Text>
+                        <Text style={styles.time}>|</Text>
+                        <Text style={styles.time}>{vote.profiles?.gender || "성별 없음"}</Text>
+                    </View>
+
+                    {!showResult && (
+                        <View style={options.length === 1 ? styles.singleButtons : styles.multiButtons}>
+                            {options.length === 1 ? (
+                                <>
+                                    <TouchableOpacity
+                                        style={styles.singleButton}
+                                        onPress={() => handleSelectSingle("살")}
+                                    >
+                                        <Text style={styles.singleButtonText}>살</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.singleButton}
+                                        onPress={() => handleSelectSingle("말")}
+                                    >
+                                        <Text style={styles.singleButtonText}>말</Text>
+                                    </TouchableOpacity>
+                                </>
+                            ) : (
+                                <>
+                                    <TouchableOpacity
+                                        style={[styles.singleButton, selected === 0 && styles.voteOptionSelected]}
+                                        onPress={() => handleSelectMulti(0)}
+                                    >
+                                        <Text style={styles.singleButtonText}>A</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.singleButton, selected === 1 && styles.voteOptionSelected]}
+                                        onPress={() => handleSelectMulti(1)}
+                                    >
+                                        <Text style={styles.singleButtonText}>B</Text>
+                                    </TouchableOpacity>
+                                </>
+                            )}
+                        </View>
+                    )}
                 </View>
 
-                {!showResult ? (
-                    options.length === 1 ? (
-                        <View style={styles.singleOptionContainer}>
-                            <Image source={{ uri: options[0] }} style={styles.singleImage} />
-                            <View style={styles.singleButtons}>
-                                <TouchableOpacity
-                                    style={styles.singleButton}
-                                    onPress={() => handleSelectSingle("살")}
-                                >
-                                    <Text style={styles.singleButtonText}>살</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.singleButton}
-                                    onPress={() => handleSelectSingle("말")}
-                                >
-                                    <Text style={styles.singleButtonText}>말</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    ) : (
-                        <View style={styles.optionContainer}>
-                            <View style={styles.options}>
-                                {options.map((img: string, idx: number) => (
-                                    <TouchableOpacity
-                                        key={idx}
-                                        onPress={() => handleSelectMulti(idx)}
-                                        style={[
-                                            styles.voteOption,
-                                            selected === idx && styles.voteOptionSelected,
-                                        ]}
-                                    >
-                                        <Image source={{ uri: img }} style={styles.voteImage} />
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                            <TouchableOpacity
-                                style={styles.submitButton}
-                                onPress={submitMultiVote}
-                            >
-                                <Text style={styles.submitText}>투표하기</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )
-                ) : (
-                    <View style={styles.optionContainer}>
-                        <Text style={styles.guideText}>투표 결과</Text>
-                        {results.map((r, idx) => (
-                            <View key={idx} style={{ width: "100%", marginVertical: 5 }}>
-                                <Text style={styles.voteContent}>
-                                    {`${r.choice}: ${r.count}표 (${r.percent}%)`}
-                                </Text>
-                                <View style={styles.progressBarBackground}>
-                                    <View
-                                        style={[
-                                            styles.progressBarFill,
-                                            { width: `${r.percent}%` },
-                                        ]}
-                                    />
-                                </View>
-                            </View>
-                        ))}
-                        <TouchableOpacity
-                            style={styles.submitButton}
-                            onPress={nextVote}
+                {showResult && (
+                    <View style={styles.result}>
+                        <View style={styles.resultTexts}
                         >
-                            <Text style={styles.submitText}>다음</Text>
-                        </TouchableOpacity>
+                            {results.map((r, idx) => (
+                                <Text
+                                    key={idx}
+                                    style={styles.resultText}
+                                >
+                                    {`${r.count}표 : ${r.percent}%`}
+                                </Text>
+                            ))}
+                        </View>
+
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                width: "100%",
+                                height: 40,
+                                borderRadius: 20,
+                                overflow: "hidden",
+                                backgroundColor: "rgba(240,240,229,0.3)",
+                            }}
+                        >
+                            {results.map((r, idx) => {
+                                const isSelected = selected === idx;
+                                return (
+                                    <View
+                                        key={idx}
+                                        style={{
+                                            flex: r.percent,
+                                            backgroundColor: isSelected ? "#f0f0e5" : "rgba(240,240,229,0.3)",
+                                            justifyContent: "center",
+                                            alignItems: isSelected ? "flex-end" : "flex-start",
+                                            paddingHorizontal: 8,
+                                        }}
+                                    >
+                                        {/* <Text style={{ fontSize: 12, color: "#333" }}>{`${r.percent}%`}</Text> */}
+                                    </View>
+                                );
+                            })}
+                        </View>
+                        {/* <TouchableOpacity onPress={nextVote} style={{ marginTop: 10 }}>
+                            <Text style={styles.button}>다음</Text>
+                        </TouchableOpacity> */}
                     </View>
                 )}
+
+
             </View>
+
 
             <TouchableOpacity
                 style={styles.addbutton}
@@ -332,22 +335,55 @@ const styles = StyleSheet.create({
         gap: 5,
     },
     addtext: { fontSize: 20, color: "#9c7866" },
+    guideText: {
+        color: '#f0f0e6',
+        fontWeight: 'bold',
+        fontSize: 25,
+    },
     voteBox: { marginTop: 30, alignItems: "center", justifyContent: "center", gap: 20, width: "100%", paddingHorizontal: 20 },
-    guideText: { color: "#f0f0e5", fontSize: 20, fontWeight: "bold", textAlign: "center", marginBottom: 10 },
-    voteContent: { color: "#f0f0e5", fontSize: 20 },
+    voteContent: { color: "#f0f0e5", fontSize: 25, fontWeight: 'bold', margin: 20, marginBottom: 10, },
     optionContainer: { flexDirection: "column", marginHorizontal: 30, alignItems: "center", width: "100%" },
     options: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
-    voteOption: { alignItems: "center", borderWidth: 2, borderColor: "transparent", borderRadius: 10, padding: 5 },
+    voteOption: { alignItems: "center", borderWidth: 1, borderColor: "transparent", borderRadius: 10, padding: 5 },
     voteOptionSelected: { borderColor: "#f0f0e5" },
     voteImage: { width: 150, height: 150, borderRadius: 10 },
-    submitButton: { marginTop: 10, backgroundColor: "rgba(240, 240, 229, 0.3)", padding: 10, borderRadius: 30, alignItems: "center" },
-    submitText: { color: "#f0f0e5", fontWeight: "bold", fontSize: 20 },
+    images: {
+        flexDirection: 'row',
+        gap: 12,
+    },
     singleOptionContainer: { alignItems: "center" },
     singleImage: { width: 250, height: 250, borderRadius: 10, marginBottom: 20 },
     singleButtons: { flexDirection: "row", justifyContent: "space-around", gap: 10, width: "70%" },
     singleButton: { backgroundColor: "rgba(240, 240, 229, 0.3)", padding: 10, borderRadius: 30, width: "45%", alignItems: "center" },
     singleButtonText: { color: "#f0f0e5", fontWeight: "bold", fontSize: 20 },
-    progressBarBackground: { height: 20, backgroundColor: "rgba(240,240,229,0.3)", borderRadius: 10, overflow: "hidden", marginTop: 5 },
-    progressBarFill: { height: "100%", backgroundColor: "#f0f0e5", borderRadius: 10 },
-    time: { color: "#f0f0e5", fontSize: 14 }
+    multiButtons: { flexDirection: 'row', justifyContent: 'space-around', gap: 10, marginVertical: 20, },
+    time: { color: "#f0f0e5", fontSize: 14 },
+    info: { flexDirection: "row", gap: 5, marginTop: 5, alignItems: 'center' },
+    result: {
+        flexDirection: 'column',
+        marginHorizontal: 20,
+    },
+    resultTexts: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 5,
+    },
+    resultText: {
+        color: '#f0f0e5',
+        fontSize: 18,
+        fontWeight: 'bold'
+    },
+    button: {
+        color: '#9c7866',
+        fontSize: 18,
+        fontWeight: 'bold',
+        borderRadius: 20,
+        backgroundColor: '#f0f0e5',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        textAlign: 'center',
+        marginVertical: 10,
+
+    },
 });

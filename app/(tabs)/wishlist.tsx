@@ -146,7 +146,7 @@ export default function WishList() {
         <Text style={styles.logo}>wishlist</Text>
         <TouchableOpacity style={styles.addbutton} onPress={openSheet}>
           <Text style={styles.addtext}>add</Text>
-          <Ionicons name="add" size={15} color="#f0f0e5" />
+          <Ionicons name="add" size={15} color="#b7aa93" />
         </TouchableOpacity>
       </View>
       <Modal visible={visible} transparent animationType="fade">
@@ -225,13 +225,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#b7aa93',
+    backgroundColor: '#f0f0e5',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
   },
   addtext: {
-    color: '#f0f0e5',
+    color: '#b7aa93',
+    fontWeight: 'bold',
     fontSize: 15,
   },
   overlay: {
@@ -277,7 +278,7 @@ const styles = StyleSheet.create({
   },
   wishItem: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(240, 240, 229, 0.3)',
+    backgroundColor: 'rgba(240, 240, 229, 0.5)',
     borderRadius: 10,
     padding: 10,
     marginBottom: 15,

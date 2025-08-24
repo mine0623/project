@@ -155,7 +155,7 @@ export default function Profilesettings() {
 
         // ✅ 이동 처리: 새 가입자 → posts.tsx / 기존 유저 → 이전 화면
         if (!isExistingProfile) {
-            router.replace("/post");
+            router.replace("/postlist");
         } else {
             router.back();
         }

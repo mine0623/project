@@ -32,7 +32,7 @@ export default function Login() {
         if (!profile || !profile.name) {
             router.replace(`/profilesettings?email=${encodeURIComponent(email)}`);
         } else {
-            router.replace("/post");
+            router.replace("/postlist");
         }
 
     };

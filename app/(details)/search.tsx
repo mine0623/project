@@ -12,6 +12,7 @@ import {
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import PostCard from "./postCard";
 
 export default function Search() {
     const [searchText, setSearchText] = useState("");
@@ -78,138 +79,29 @@ export default function Search() {
         setPosts(formatted);
     };
 
-    const toggleHeart = async (postId: number) => {
-        if (!currentUser) return;
-
-        const updatedPosts = [...posts];
-        const postIndex = updatedPosts.findIndex((p) => p.id === postId);
-        if (postIndex === -1) return;
-
-        const post = updatedPosts[postIndex];
-        const hasHeart = post.hearts.some((h: any) => h.user_id === currentUser.id);
-
-        if (hasHeart) {
-            post.hearts = post.hearts.filter((h: any) => h.user_id !== currentUser.id);
-            await supabase
-                .from("hearts")
-                .delete()
-                .eq("post_id", postId)
-                .eq("user_id", currentUser.id);
-        } else {
-            post.hearts.push({ user_id: currentUser.id });
-            await supabase.from("hearts").insert([{ post_id: postId, user_id: currentUser.id }]);
-        }
-
-        setPosts(updatedPosts);
+    const handlePostPress = (post: any) => {
+        router.push({
+            pathname: "/postDetail",
+            params: { post: JSON.stringify(post) },
+        });
     };
 
-    // 나이대 계산 함수
-    const getAgeGroup = (birth_year: number | null) => {
-        if (!birth_year) return "연령대 없음";
-        const age = new Date().getFullYear() - birth_year;
-        if (age < 10) return "10세 미만";
-        const group = Math.floor(age / 10) * 10;
-        return `${group}대`;
-    };
+     const renderPost = ({ item }: { item: any }) => {
+            return (
+                <TouchableOpacity
+                    onPress={() => handlePostPress(item)}
+                    activeOpacity={0.8} // 터치 시 약간 투명해지는 효과
+                >
+                    <PostCard post={item} currentUser={currentUser} />
+                </TouchableOpacity>
+            );
+        };
 
-    const renderPost = ({ item }: { item: any }) => {
-        const profile = item.profiles;
-        const hasHeart = currentUser
-            ? item.hearts.some((h: any) => h.user_id === currentUser.id)
-            : false;
-
-        return (
-            <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() =>
-                    router.push({
-                        pathname: "/postDetail",
-                        params: { post: JSON.stringify(item) } // 전체 데이터 문자열로 전달
-                    })
-                }
-            >
-                <View style={styles.post}>
-                    <View style={styles.postHeader}>
-                        <TouchableOpacity style={styles.profile}>
-                            {profile?.avatar_url ? (
-                                <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-                            ) : (
-                                <Ionicons name="person-circle-sharp" size={35} color="#b7aa93" />
-                            )}
-                            <Text style={styles.name}>{profile?.name || "익명"}</Text>
-                        </TouchableOpacity>
-
-                        <Text style={styles.time}>{getAgeGroup(profile?.birth_year)}</Text>
-                        <Text style={styles.time}>|</Text>
-                        <Text style={styles.time}>{profile?.gender || "성별 없음"}</Text>
-                        <Text style={styles.time}>|</Text>
-                        <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
-                    </View>
-
-                    <View style={styles.tool}>
-                        <View style={styles.main}>
-                            <View style={styles.articles}>
-                                <Text style={styles.title}>{item.title}</Text>
-                                <Text style={styles.text}>{item.content}</Text>
-                            </View>
-                            {item.images?.length > 0 ? (
-                                <Image source={{ uri: item.images[0] }} style={styles.img} resizeMode="cover" />
-                            ) : (
-                                <View style={styles.img}>
-                                    <Ionicons name="image-outline" size={40} color="#f0f0e5" />
-                                </View>
-                            )}
-                        </View>
-
-                        <View style={styles.tags}>
-                            {item.tags?.map((tag: string, index: number) => (
-                                <Text key={index} style={styles.tag}>
-                                    #{tag}
-                                </Text>
-                            ))}
-                        </View>
-                    </View>
-
-                    <View style={styles.icons}>
-                        <View style={styles.icon}>
-                            <TouchableOpacity onPress={() => toggleHeart(item.id)}>
-                                <Ionicons
-                                    name="heart"
-                                    size={27}
-                                    color={hasHeart ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"}
-                                />
-                            </TouchableOpacity>
-                            <Text style={styles.count}>{item.hearts.length}</Text>
-                        </View>
-                        <View style={styles.icon}>
-                            <Ionicons name="chatbox" size={27} color="#dfc8ba" />
-                            <Text style={styles.count}>{item.comments.length}</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.underline}></View>
-                </View>
-            </TouchableOpacity>
-        );
-    };
-
-
-    const timeAgo = (date: string) => {
-        const diff = (new Date().getTime() - new Date(date).getTime()) / 1000;
-        if (diff < 60) return `${Math.floor(diff)}초 전`;
-        if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-        return `${Math.floor(diff / 86400)}일 전`;
-    };
-
-    // 검색 리셋 함수
     const handleIconPress = () => {
         if (searchText) {
-            // 검색 중이면 상태만 초기화
             setSearchText("");
             setPosts([]);
         } else {
-            // 검색창이 비어있으면 post 화면으로 이동
             router.back();
         }
     };
@@ -234,7 +126,6 @@ export default function Search() {
                 <Ionicons name="search" size={20} color="#f0f0e5" />
             </View>
 
-            {/* 추천 검색어 */}
             {searchText.trim() === "" && (
                 <View style={styles.recommend}>
                     <Text style={styles.recommendText}>추천 검색어</Text>
@@ -248,8 +139,6 @@ export default function Search() {
                     </View>
                 </View>
             )}
-
-            {/* 검색 결과 */}
             {searchText.trim() !== "" && (
                 <FlatList
                     data={posts}

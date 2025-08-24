@@ -22,7 +22,7 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="post"
+                name="postlist"
                 options={{
                     title: '자유게시판',
                     tabBarShowLabel: false,
