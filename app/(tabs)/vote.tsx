@@ -12,7 +12,6 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { FontAwesome6 } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
@@ -34,7 +33,6 @@ export default function Vote() {
     const [results, setResults] = useState<any[]>([]);
     const [currentUserId, setCurrentUserId] = useState<string>("");
 
-    // 투표 불러오기
     const fetchVotes = async () => {
         setLoading(true);
         const {
@@ -47,12 +45,24 @@ export default function Vote() {
         }
         setCurrentUserId(user.id);
 
-        // votes 가져오기
+        // ✅ 내가 이미 투표한 항목들 가져오기
+        const { data: myVotes, error: myVotesError } = await supabase
+            .from("vote_results")
+            .select("vote_id")
+            .eq("user_id", user.id);
+
+        if (myVotesError) console.error(myVotesError);
+
+        const votedIds = myVotes?.map(v => v.vote_id) || [];
+
+        // ✅ 이미 투표한 항목은 제외하고 불러오기
         const { data: votesData, error: votesError } = await supabase
             .from("votes")
             .select("*")
-            .neq("user_id", user.id)
+            .neq("user_id", user.id) // 내가 만든 투표 제외
+            .not("id", "in", `(${votedIds.join(",")})`) // 이미 투표한 항목 제외
             .order("created_at", { ascending: false });
+
         if (votesError) console.error(votesError);
 
         // 관련 profiles 가져오기
@@ -253,57 +263,52 @@ export default function Vote() {
                 </View>
 
                 {showResult && (
-                    <View style={styles.result}>
-                        <View style={styles.resultTexts}
-                        >
-                            {results.map((r, idx) => (
-                                <Text
-                                    key={idx}
-                                    style={styles.resultText}
-                                >
-                                    {`${r.count}표 : ${r.percent}%`}
+                    <View style={{ marginTop: 10 }}>
+                        {results.map((r, idx) => (
+                            <View key={idx} style={{ width: "100%", marginVertical: 5 }}>
+                                <Text style={styles.voteContent}>
+                                    {`${r.choice}: ${r.count}표 (${r.percent}%)`}
                                 </Text>
-                            ))}
-                        </View>
 
-                        <View
-                            style={{
-                                flexDirection: "row",
-                                width: "100%",
-                                height: 40,
-                                borderRadius: 20,
-                                overflow: "hidden",
-                                backgroundColor: "rgba(240,240,229,0.3)",
-                            }}
-                        >
-                            {results.map((r, idx) => {
-                                const isSelected = selected === idx;
-                                return (
+                                <View
+                                    style={[
+                                        { borderRadius: 15, overflow: "hidden", flexDirection: "row" },
+                                    ]}
+                                >
                                     <View
-                                        key={idx}
                                         style={{
                                             flex: r.percent,
-                                            backgroundColor: isSelected ? "#f0f0e5" : "rgba(240,240,229,0.3)",
+                                            backgroundColor:
+                                                options.length === 1
+                                                    ? r.choice === selected
+                                                        ? "#f0f0e5"
+                                                        : "rgba(240,240,229,0.3)"
+                                                    : selected === idx
+                                                        ? "#f0f0e5"
+                                                        : "rgba(240,240,229,0.3)",
                                             justifyContent: "center",
-                                            alignItems: isSelected ? "flex-end" : "flex-start",
+                                            alignItems:
+                                                options.length === 1
+                                                    ? r.choice === selected
+                                                        ? "flex-end"
+                                                        : "flex-start"
+                                                    : selected === idx
+                                                        ? "flex-end"
+                                                        : "flex-start",
                                             paddingHorizontal: 8,
                                         }}
-                                    >
-                                        {/* <Text style={{ fontSize: 12, color: "#333" }}>{`${r.percent}%`}</Text> */}
-                                    </View>
-                                );
-                            })}
-                        </View>
-                        {/* <TouchableOpacity onPress={nextVote} style={{ marginTop: 10 }}>
+                                    />
+                                </View>
+                            </View>
+                        ))}
+                        <TouchableOpacity onPress={nextVote}>
                             <Text style={styles.button}>다음</Text>
-                        </TouchableOpacity> */}
+                        </TouchableOpacity>
                     </View>
                 )}
 
 
             </View>
-
-
             <TouchableOpacity
                 style={styles.addbutton}
                 onPress={() => router.push("/add-vote")}
@@ -312,6 +317,7 @@ export default function Vote() {
                 <Ionicons name="add" size={20} color="#9c7866" />
             </TouchableOpacity>
         </SafeAreaView>
+
     );
 }
 
@@ -319,8 +325,8 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#9c7866" },
     emptyContainer: { margin: 'auto' },
     header: { margin: 30, marginBottom: 10 },
-    logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold" },
-    emptyText: { color: "#f0f0e5", fontSize: 18, textAlign: "center", marginTop: 50 },
+    logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold", letterSpacing: 1 },
+    emptyText: { color: "#f0f0e5", fontSize: 18, textAlign: "center", marginTop: 50, letterSpacing: 1 },
     addbutton: {
         flexDirection: "row",
         position: "absolute",
@@ -334,31 +340,44 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 5,
     },
-    addtext: { fontSize: 20, color: "#9c7866" },
+    addtext: { fontSize: 20, color: "#9c7866", letterSpacing: 1 },
     guideText: {
         color: '#f0f0e6',
         fontWeight: 'bold',
         fontSize: 25,
     },
     voteBox: { marginTop: 30, alignItems: "center", justifyContent: "center", gap: 20, width: "100%", paddingHorizontal: 20 },
-    voteContent: { color: "#f0f0e5", fontSize: 25, fontWeight: 'bold', margin: 20, marginBottom: 10, },
+    voteContent: { color: "#f0f0e5", fontSize: 25, fontWeight: 'bold' },
     optionContainer: { flexDirection: "column", marginHorizontal: 30, alignItems: "center", width: "100%" },
     options: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
     voteOption: { alignItems: "center", borderWidth: 1, borderColor: "transparent", borderRadius: 10, padding: 5 },
     voteOptionSelected: { borderColor: "#f0f0e5" },
-    voteImage: { width: 150, height: 150, borderRadius: 10 },
+    voteImage: { width: 150, height: 150, borderRadius: 10, marginBottom: 20 },
     images: {
         flexDirection: 'row',
         gap: 12,
     },
     singleOptionContainer: { alignItems: "center" },
     singleImage: { width: 250, height: 250, borderRadius: 10, marginBottom: 20 },
-    singleButtons: { flexDirection: "row", justifyContent: "space-around", gap: 10, width: "70%" },
+    singleButtons: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        gap: 10,
+        marginVertical: 20,
+        width: "70%"
+    },
+    multiButtons: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        gap: 10,
+        marginVertical: 20,
+        width: "70%"
+    },
+
     singleButton: { backgroundColor: "rgba(240, 240, 229, 0.3)", padding: 10, borderRadius: 30, width: "45%", alignItems: "center" },
-    singleButtonText: { color: "#f0f0e5", fontWeight: "bold", fontSize: 20 },
-    multiButtons: { flexDirection: 'row', justifyContent: 'space-around', gap: 10, marginVertical: 20, },
-    time: { color: "#f0f0e5", fontSize: 14 },
-    info: { flexDirection: "row", gap: 5, marginTop: 5, alignItems: 'center' },
+    singleButtonText: { color: "#f0f0e5", fontWeight: "bold", fontSize: 20, letterSpacing: 1 },
+    time: { color: "#f0f0e5", fontSize: 14, letterSpacing: 1 },
+    info: { flexDirection: "row", gap: 5, marginVertical: 5, alignItems: 'center' },
     result: {
         flexDirection: 'column',
         marginHorizontal: 20,
@@ -372,7 +391,8 @@ const styles = StyleSheet.create({
     resultText: {
         color: '#f0f0e5',
         fontSize: 18,
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        letterSpacing: 1,
     },
     button: {
         color: '#9c7866',
@@ -383,7 +403,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         textAlign: 'center',
-        marginVertical: 10,
-
+        marginVertical: 20,
+        letterSpacing: 1,
     },
 });
