@@ -12,7 +12,7 @@ export default function PostList() {
   const [sortOption, setSortOption] = useState<"latest" | "popular">("latest");
   const router = useRouter();
 
-  const tabs: string[] = ["전체", "추천", "질문"];
+  const tabs: string[] = ["전체", "이번 주 인기🔥", "이번 달 인기🔥"];
 
   useEffect(() => {
     getCurrentUser();
@@ -45,9 +45,6 @@ export default function PostList() {
         comments (id)
       `);
 
-    if (selectedTab !== "전체") query = query.contains("tags", [selectedTab]);
-    if (sortOption === "latest") query = query.order("created_at", { ascending: false });
-
     const { data, error } = await query;
     if (error) {
       console.error("Error fetching posts:", error);
@@ -63,8 +60,31 @@ export default function PostList() {
       images: Array.isArray(post.images) ? post.images : [],
     }));
 
+    const now = new Date();
+    if (selectedTab === "이번 주 인기🔥") {
+      const startOfWeek = new Date(now);
+      const day = now.getDay();
+      const diff = day === 0 ? 6 : day - 1;
+      startOfWeek.setDate(now.getDate() - diff);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      formatted = formatted.filter(
+        (post) => new Date(post.created_at) >= startOfWeek
+      );
+    } else if (selectedTab === "이번 달 인기🔥") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      formatted = formatted.filter(
+        (post) => new Date(post.created_at) >= startOfMonth
+      );
+    }
+
     if (sortOption === "popular") {
       formatted = formatted.sort((a, b) => b.hearts.length - a.hearts.length);
+    } else {
+      formatted = formatted.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     }
 
     setPosts(formatted);
@@ -76,7 +96,6 @@ export default function PostList() {
       params: { post: JSON.stringify(post) },
     });
   };
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -95,30 +114,33 @@ export default function PostList() {
             onPress={() => setSelectedTab(tab)}
           >
             <Text style={[styles.tabText, selectedTab === tab && styles.tabTextSelected]}>
-              {tab === "전체" ? tab : `#${tab}`}
+              {tab}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <View style={styles.sortContainer}>
-        <TouchableOpacity
-          style={[styles.sortButton, sortOption === "latest" && styles.sortSelected]}
-          onPress={() => setSortOption("latest")}
-        >
-          <Text style={[styles.sortText, sortOption === "latest" && styles.sortTextSelected]}>
-            최신순
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.sortButton, sortOption === "popular" && styles.sortSelected]}
-          onPress={() => setSortOption("popular")}
-        >
-          <Text style={[styles.sortText, sortOption === "popular" && styles.sortTextSelected]}>
-            인기순
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {selectedTab === "전체" && (
+        <View style={styles.sortContainer}>
+          <TouchableOpacity
+            style={[styles.sortButton, sortOption === "latest" && styles.sortSelected]}
+            onPress={() => setSortOption("latest")}
+          >
+            <Text style={[styles.sortText, sortOption === "latest" && styles.sortTextSelected]}>
+              최신순
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortButton, sortOption === "popular" && styles.sortSelected]}
+            onPress={() => setSortOption("popular")}
+          >
+            <Text style={[styles.sortText, sortOption === "popular" && styles.sortTextSelected]}>
+              인기순
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
 
       <FlatList
         data={posts}
@@ -154,10 +176,10 @@ const styles = StyleSheet.create({
   tabButtonSelected: { backgroundColor: "#f0f0e5" },
   tabText: { color: '#f0f0e5' },
   tabTextSelected: { color: "#9c7866", fontWeight: 'bold' },
-  sortContainer: { flexDirection: "row", marginHorizontal: 20, marginVertical: 10, gap: 8 },
+  sortContainer: { flexDirection: "row", marginHorizontal: 20, marginVertical: 10, gap: 8, paddingVertical: 10, },
   sortButton: {},
   sortSelected: {},
-  sortText: { color: "rgba(240, 240, 229, 0.5)" },
+  sortText: { color: "rgba(240, 240, 229, 0.5)", fontSize: 15, },
   sortTextSelected: { color: "#f0f0e5" },
   floatingTextButton: {
     flexDirection: 'row',

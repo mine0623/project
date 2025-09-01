@@ -44,7 +44,7 @@ export default function Wish() {
             return;
         }
 
-        const id = product.id;  // 숫자형일 거예요
+        const id = product.id;
 
         const { error } = await supabase
             .from('wishlist')
@@ -54,7 +54,7 @@ export default function Wish() {
         if (error) {
             console.error('삭제 실패:', error);
         } else {
-            router.replace('/wish');
+            router.back();
         }
     };
     return (

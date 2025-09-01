@@ -59,7 +59,7 @@ export default function WishList() {
     if (!link.trim()) return null;
 
     try {
-      const res = await fetch('http://172.30.1.79:3000/parse-link', {
+      const res = await fetch('http://172.30.14.30:3000/parse-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: link }),

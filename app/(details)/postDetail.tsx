@@ -13,8 +13,6 @@ import {
   StyleSheet,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import { supabase } from "@/lib/supabase";
 import { AntDesign, Ionicons, FontAwesome6 } from "@expo/vector-icons";
 import PostCard from "@/app/(details)/postCard";
@@ -27,7 +25,6 @@ export default function PostDetail() {
   const [currentPost, setCurrentPost] = useState<any>(postData);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [newComment, setNewComment] = useState<string>("");
-  const [images, setImages] = useState<{ uri: string; base64: string | null }[]>([]);
 
   useEffect(() => {
     getCurrentUser();
@@ -39,22 +36,47 @@ export default function PostDetail() {
     if (!error) setCurrentUser(data.user);
   };
 
+  // 댓글 + 좋아요 fetch
   const fetchComments = async () => {
     if (!currentPost) return;
     const { data, error } = await supabase
       .from("comments")
-      .select("id, content, created_at, user_id, profiles(name, avatar_url)")
+      .select(`
+        id,
+        content,
+        created_at,
+        user_id,
+        profiles(name, avatar_url),
+        comment_likes(user_id)
+      `)
       .eq("post_id", currentPost.id)
       .order("created_at", { ascending: true });
 
-    if (!error && data) {
-      const formattedComments = data.map((c: any) => ({
-        ...c,
-        user_name: c.profiles?.name || "익명",
-        user_avatar: c.profiles?.avatar_url || null,
-      }));
-      setCurrentPost({ ...currentPost, comments: formattedComments });
+    if (error) return console.error(error);
+
+    const formattedComments = data.map((c: any) => ({
+      ...c,
+      user_name: c.profiles?.name || "익명",
+      user_avatar: c.profiles?.avatar_url || null,
+      like_count: c.comment_likes.length,
+      likedByCurrentUser: c.comment_likes.some((l: any) => l.user_id === currentUser?.id),
+    }));
+
+    setCurrentPost({ ...currentPost, comments: formattedComments });
+  };
+
+  // 좋아요 토글
+  const toggleCommentLike = async (commentId: number, userId: string) => {
+    const existingLike = currentPost.comments.find((c: any) => c.id === commentId)?.likedByCurrentUser;
+
+    if (existingLike) {
+      // 좋아요 취소
+      await supabase.from("comment_likes").delete().match({ comment_id: commentId, user_id: userId });
+    } else {
+      // 좋아요 추가
+      await supabase.from("comment_likes").insert([{ comment_id: commentId, user_id: userId }]);
     }
+    fetchComments(); // 갱신
   };
 
   const addComment = async () => {
@@ -78,6 +100,8 @@ export default function PostDetail() {
       ...newCommentData,
       user_name: profileData?.name || "익명",
       user_avatar: profileData?.avatar_url || null,
+      like_count: 0,
+      likedByCurrentUser: false,
     };
 
     setCurrentPost({
@@ -89,10 +113,8 @@ export default function PostDetail() {
 
   const deletePost = async () => {
     const { error } = await supabase.from("posts").delete().eq("id", currentPost.id);
-
-    if (error) {
-      Alert.alert("오류", "게시물 삭제에 실패했습니다.");
-    } else {
+    if (error) Alert.alert("오류", "게시물 삭제에 실패했습니다.");
+    else {
       Alert.alert("완료", "게시물이 삭제되었습니다.");
       router.back();
     }
@@ -108,35 +130,12 @@ export default function PostDetail() {
 
   if (!currentPost) return <Text>게시물 정보를 불러올 수 없습니다.</Text>;
 
-  const pickImage = async () => {
-    const remaining = 3 - images.length;
-    if (remaining <= 0) {
-      Alert.alert("알림", "이미지는 최대 3장까지 선택 가능합니다.");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      selectionLimit: remaining,
-      quality: 1,
-      base64: true,
-    });
-
-    if (!result.canceled) {
-      const newImages = result.assets.map((asset) => ({
-        uri: asset.uri,
-        base64: asset.base64 ?? null,
-      }));
-      setImages((prev) => [...prev, ...newImages]);
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
@@ -157,10 +156,7 @@ export default function PostDetail() {
         </View>
 
         <ScrollView style={{ flex: 1 }}>
-          <PostCard
-            post={currentPost}
-            currentUser={currentUser}
-          />
+          <PostCard post={currentPost} currentUser={currentUser} />
 
           <View style={styles.commentsContainer}>
             <Text style={styles.commentHeader}>댓글</Text>
@@ -169,43 +165,33 @@ export default function PostDetail() {
                 <View style={{ flexDirection: "row", gap: 8, justifyContent: 'flex-start' }}>
                   <Image source={{ uri: c.user_avatar }} style={styles.commentAvatar} />
                   <View style={{ flexDirection: 'column', gap: 5 }}>
-                    <View style={{ flexDirection: 'row', gap: 5, }}>
+                    <View style={{ flexDirection: 'row', gap: 5 }}>
                       <Text style={styles.commentName}>{c.user_name}</Text>
                       <Text style={styles.time}>{timeAgo(c.created_at)}</Text>
                     </View>
                     <Text style={styles.commentText}>{c.content}</Text>
                   </View>
                 </View>
-                <TouchableOpacity style={styles.heart}>
-                  <Ionicons
-                    name="heart"
-                    size={27}
-                    color="#e5c1bd"
-                  />
-                  <Text style={styles.count}>1</Text>
-                </TouchableOpacity>
+
+
+                <View style={styles.heart}>
+                  <TouchableOpacity 
+                    onPress={() => toggleCommentLike(c.id, currentUser.id)}
+                  >
+                    <Ionicons
+                      name="heart"
+                      size={27}
+                      color={c.likedByCurrentUser ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"}
+                    />
+                  </TouchableOpacity>
+                  <Text style={styles.count}>{c.like_count}</Text>
+                </View>
               </View>
             ))}
           </View>
         </ScrollView>
 
-        {images.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: 20, marginBottom: 10 }}>
-            {images.map((img, idx) => (
-              <Image
-                key={idx}
-                source={{ uri: img.uri }}
-                style={{ width: 80, height: 80, borderRadius: 10, marginRight: 10 }}
-                resizeMode="cover"
-              />
-            ))}
-          </ScrollView>
-        )}
-
         <View style={styles.commentInputContainer}>
-          <TouchableOpacity onPress={pickImage}>
-            <Ionicons name="add" size={25} color="#f0f0e5" />
-          </TouchableOpacity>
           <TextInput
             style={styles.commentInput}
             placeholder="댓글을 입력하세요..."
@@ -229,23 +215,9 @@ const styles = StyleSheet.create({
   commentItem: { flexDirection: "row", justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 10 },
   commentName: { fontWeight: "bold", color: "#f0f0e5", fontSize: 16 },
   commentText: { color: "#f0f0e5", fontSize: 15 },
-  commentInputContainer: {
-    flexDirection: "row",
-    alignSelf: "stretch",
-    paddingVertical: 25,
-    marginHorizontal: 20,
-    borderRadius: 20,
-    justifyContent: "space-around",
-    alignItems: "center",
-    gap: 7,
-  },
-  heart: {
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  count: {
-    color: '#f0f0e5',
-  },
+  commentInputContainer: { flexDirection: "row", alignItems: "center", paddingVertical: 15, paddingHorizontal: 25 },
+  heart: { flexDirection: 'column', alignItems: 'center' },
+  count: { color: '#f0f0e5' },
   time: { color: "rgba(240, 240, 229, 0.5)" },
   commentInput: { flex: 1, color: "#f0f0e5", fontSize: 16 },
   commentAvatar: { width: 35, height: 35, borderRadius: 50 },

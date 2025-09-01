@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import ImageViewing from "react-native-image-viewing";
-import { supabase } from "@/lib/supabase"; // Supabase import
+import { supabase } from "@/lib/supabase";
 
 interface PostCardProps {
   post: any;
@@ -14,9 +15,45 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
   const [isViewerVisible, setIsViewerVisible] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
   const [hearts, setHearts] = useState(post.hearts || []);
-
+  const [wishImages, setWishImages] = useState<string[]>([]);
   const profile = post.profiles;
-  const images = post.images;
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchWishImages = async () => {
+      if (!post.wishlist_ids || post.wishlist_ids.length === 0) return;
+
+      try {
+        const { data: wishes, error } = await supabase
+          .from("wishlist")
+          .select("*")
+          .in("id", post.wishlist_ids);
+
+        if (error) {
+          console.error("Wishlist fetch error:", error);
+          return;
+        }
+
+        if (wishes && wishes.length > 0) {
+          const images = wishes
+            .map((w: any) => w.image)
+            .filter((img: string | null) => !!img);
+          setWishImages(images);
+        }
+      } catch (err) {
+        console.error("Unexpected error fetching wishlist images:", err);
+      }
+    };
+    
+
+    fetchWishImages();
+  }, [post.wishlist_ids]);
+  
+
+
+
+
+  const allImages = [...(post.images || []), ...wishImages];
 
   const getAgeGroup = (birth_year: number | null) => {
     if (!birth_year) return "연령대 없음";
@@ -77,15 +114,16 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           <Text style={styles.time}>{timeAgo(post.created_at)}</Text>
         </View>
 
-        {images.length > 0 && (
+        {allImages.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-            {images.map((img: string, idx: number) => (
+            {allImages.map((img: string, idx: number) => (
               <TouchableOpacity key={idx} onPress={() => openImageViewer(idx)}>
                 <Image source={{ uri: img }} style={styles.imageItem} resizeMode="cover" />
               </TouchableOpacity>
             ))}
           </ScrollView>
         )}
+
 
         <View style={styles.articles}>
           <Text style={styles.title}>{post.title}</Text>
@@ -94,7 +132,18 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
 
         <View style={styles.tags}>
           {post.tags?.map((tag: string, index: number) => (
-            <Text key={index} style={styles.tag}>#{tag}</Text>
+            <TouchableOpacity
+              key={index}
+              onPress={() => router.push({
+                pathname: '/search',
+                params: {
+                  tag: tag
+                }
+              })}
+            >
+              <Text style={styles.tag}>#{tag}</Text>
+            </TouchableOpacity>
+
           ))}
         </View>
 
@@ -119,11 +168,12 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
       </View>
 
       <ImageViewing
-        images={images.map((img: string) => ({ uri: img }))}
+        images={allImages.map((img: string) => ({ uri: img }))}
         imageIndex={viewerIndex}
         visible={isViewerVisible}
         onRequestClose={() => setIsViewerVisible(false)}
       />
+
     </View>
   );
 }

@@ -206,6 +206,15 @@ export default function Vote() {
                     {options.length === 1 ? "살까? 말까?" : "둘 중 골라줘"}
                 </Text>
 
+                <View style={styles.info}>
+                    <Text style={styles.time}>{getAgeGroup(vote.profiles?.birth_year)}</Text>
+                    <Text style={styles.time}>|</Text>
+                    <Text style={styles.time}>{vote.profiles?.gender || "성별 없음"}</Text>
+                </View>
+
+
+                <Text style={styles.voteContent}>{vote.content}</Text>
+
                 <View style={styles.optionContainer}>
                     <View style={styles.images}>
                         {options.map((img: string, idx: number) => (
@@ -215,14 +224,6 @@ export default function Vote() {
                                 style={options.length === 1 ? styles.singleImage : styles.voteImage}
                             />
                         ))}
-                    </View>
-
-                    <Text style={styles.voteContent}>{vote.content}</Text>
-
-                    <View style={styles.info}>
-                        <Text style={styles.time}>{getAgeGroup(vote.profiles?.birth_year)}</Text>
-                        <Text style={styles.time}>|</Text>
-                        <Text style={styles.time}>{vote.profiles?.gender || "성별 없음"}</Text>
                     </View>
 
                     {!showResult && (
@@ -264,49 +265,38 @@ export default function Vote() {
 
                 {showResult && (
                     <View style={{ marginTop: 10 }}>
-                        {results.map((r, idx) => (
-                            <View key={idx} style={{ width: "100%", marginVertical: 5 }}>
-                                <Text style={styles.voteContent}>
+                        <View style={{
+                            flexDirection: "row",
+                            borderRadius: 15,
+                            overflow: "hidden",
+                            backgroundColor: "rgba(240,240,229,0.3)"
+                        }}>
+                            {results.map((r, idx) => (
+                                <View
+                                    key={idx}
+                                    style={{
+                                        flex: r.count,
+                                        backgroundColor:
+                                            idx === 0 ? "#f0f0e5" : "#b7aa93",
+                                    }}
+                                />
+                            ))}
+                        </View>
+
+
+                        <View style={{ marginTop: 8 }}>
+                            {results.map((r, idx) => (
+                                <Text key={idx} style={styles.voteContent}>
                                     {`${r.choice}: ${r.count}표 (${r.percent}%)`}
                                 </Text>
+                            ))}
+                        </View>
 
-                                <View
-                                    style={[
-                                        { borderRadius: 15, overflow: "hidden", flexDirection: "row" },
-                                    ]}
-                                >
-                                    <View
-                                        style={{
-                                            flex: r.percent,
-                                            backgroundColor:
-                                                options.length === 1
-                                                    ? r.choice === selected
-                                                        ? "#f0f0e5"
-                                                        : "rgba(240,240,229,0.3)"
-                                                    : selected === idx
-                                                        ? "#f0f0e5"
-                                                        : "rgba(240,240,229,0.3)",
-                                            justifyContent: "center",
-                                            alignItems:
-                                                options.length === 1
-                                                    ? r.choice === selected
-                                                        ? "flex-end"
-                                                        : "flex-start"
-                                                    : selected === idx
-                                                        ? "flex-end"
-                                                        : "flex-start",
-                                            paddingHorizontal: 8,
-                                        }}
-                                    />
-                                </View>
-                            </View>
-                        ))}
                         <TouchableOpacity onPress={nextVote}>
                             <Text style={styles.button}>다음</Text>
                         </TouchableOpacity>
                     </View>
                 )}
-
 
             </View>
             <TouchableOpacity
@@ -341,43 +331,45 @@ const styles = StyleSheet.create({
         gap: 5,
     },
     addtext: { fontSize: 20, color: "#9c7866", letterSpacing: 1 },
+
     guideText: {
-        color: '#f0f0e6',
-        fontWeight: 'bold',
-        fontSize: 25,
+        backgroundColor: 'rgba(240, 240, 229, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        color: '#f0f0e5',
+        fontSize: 20,
     },
-    voteBox: { marginTop: 30, alignItems: "center", justifyContent: "center", gap: 20, width: "100%", paddingHorizontal: 20 },
-    voteContent: { color: "#f0f0e5", fontSize: 25, fontWeight: 'bold' },
-    optionContainer: { flexDirection: "column", marginHorizontal: 30, alignItems: "center", width: "100%" },
-    options: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
+    voteBox: { alignItems: "center", justifyContent: "center", paddingHorizontal: 20, },
+    voteContent: { color: "#f0f0e5", fontSize: 25, fontWeight: 'bold', },
+    optionContainer: { flexDirection: "column", alignItems: "center", width: "100%" },
+    options: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center" },
     voteOption: { alignItems: "center", borderWidth: 1, borderColor: "transparent", borderRadius: 10, padding: 5 },
     voteOptionSelected: { borderColor: "#f0f0e5" },
-    voteImage: { width: 150, height: 150, borderRadius: 10, marginBottom: 20 },
+    voteImage: { width: 150, height: 150, borderRadius: 10, },
     images: {
         flexDirection: 'row',
         gap: 12,
     },
     singleOptionContainer: { alignItems: "center" },
-    singleImage: { width: 250, height: 250, borderRadius: 10, marginBottom: 20 },
+    singleImage: { width: 250, height: 250, borderRadius: 10, },
     singleButtons: {
         flexDirection: "row",
         justifyContent: "space-around",
         gap: 10,
-        marginVertical: 20,
         width: "70%"
     },
     multiButtons: {
         flexDirection: "row",
         justifyContent: "space-around",
         gap: 10,
-        marginVertical: 20,
         width: "70%"
     },
-
     singleButton: { backgroundColor: "rgba(240, 240, 229, 0.3)", padding: 10, borderRadius: 30, width: "45%", alignItems: "center" },
     singleButtonText: { color: "#f0f0e5", fontWeight: "bold", fontSize: 20, letterSpacing: 1 },
     time: { color: "#f0f0e5", fontSize: 14, letterSpacing: 1 },
-    info: { flexDirection: "row", gap: 5, marginVertical: 5, alignItems: 'center' },
+    info: { flexDirection: "row", gap: 5, alignItems: 'center' , marginVertical: 10},
+
     result: {
         flexDirection: 'column',
         marginHorizontal: 20,

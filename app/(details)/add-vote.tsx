@@ -30,7 +30,6 @@ export default function AddVote() {
   const [selectedWishlistTabs, setSelectedWishlistTabs] = useState([[], []] as any[][]);
   const [wishlist, setWishlist] = useState<any[]>([]);
 
-  // ================== 위시 데이터 불러오기 ==================
   useEffect(() => {
     const fetchWishlist = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -403,7 +402,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold"
   },
   pickButton: {
-    backgroundColor: "rgba(183, 170, 147, 0.5)",
+    backgroundColor: "rgba(240, 240, 229, 0.1)",
     width: 100,
     height: 100,
     borderRadius: 8,
