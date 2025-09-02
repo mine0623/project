@@ -8,7 +8,6 @@ import { supabase } from "@/lib/supabase";
 interface PostCardProps {
   post: any;
   currentUser: any;
-  onPress?: () => void;
 }
 
 export default function PostCard({ post, currentUser }: PostCardProps) {
@@ -19,14 +18,15 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
   const profile = post.profiles;
   const router = useRouter();
 
+  // wishlist 이미지 가져오기
   useEffect(() => {
     const fetchWishImages = async () => {
-      if (!post.wishlist_ids || post.wishlist_ids.length === 0) return;
+      if (!Array.isArray(post.wishlist_ids) || post.wishlist_ids.length === 0) return;
 
       try {
         const { data: wishes, error } = await supabase
           .from("wishlist")
-          .select("*")
+          .select("id, image")
           .in("id", post.wishlist_ids);
 
         if (error) {
@@ -36,24 +36,27 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
 
         if (wishes && wishes.length > 0) {
           const images = wishes
-            .map((w: any) => w.image)
-            .filter((img: string | null) => !!img);
+            .map((w: any) =>
+              w.image
+                ? supabase.storage
+                  .from("wishlist-images")
+                  .getPublicUrl(w.image).data?.publicUrl
+                : null
+            )
+            .filter(Boolean) as string[];
+
           setWishImages(images);
         }
       } catch (err) {
         console.error("Unexpected error fetching wishlist images:", err);
       }
     };
-    
 
     fetchWishImages();
   }, [post.wishlist_ids]);
-  
 
-
-
-
-  const allImages = [...(post.images || []), ...wishImages];
+  // 모든 이미지 합치기
+  const allImages = [...(Array.isArray(post.images) ? post.images : []), ...wishImages];
 
   const getAgeGroup = (birth_year: number | null) => {
     if (!birth_year) return "연령대 없음";
@@ -82,7 +85,9 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
     const hasHeart = hearts.some((h: any) => h.user_id === currentUser.id);
 
     if (hasHeart) {
-      await supabase.from("hearts").delete()
+      await supabase
+        .from("hearts")
+        .delete()
         .eq("post_id", post.id)
         .eq("user_id", currentUser.id);
       setHearts(hearts.filter((h: any) => h.user_id !== currentUser.id));
@@ -97,6 +102,7 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
   return (
     <View>
       <View style={styles.post}>
+        {/* Header */}
         <View style={styles.postHeader}>
           <View style={styles.profile}>
             {profile?.avatar_url ? (
@@ -114,6 +120,7 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           <Text style={styles.time}>{timeAgo(post.created_at)}</Text>
         </View>
 
+        {/* 이미지 */}
         {allImages.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
             {allImages.map((img: string, idx: number) => (
@@ -124,29 +131,30 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           </ScrollView>
         )}
 
-
+        {/* 글 */}
         <View style={styles.articles}>
           <Text style={styles.title}>{post.title}</Text>
           <Text style={styles.text}>{post.content}</Text>
         </View>
 
+        {/* 태그 */}
         <View style={styles.tags}>
           {post.tags?.map((tag: string, index: number) => (
             <TouchableOpacity
               key={index}
-              onPress={() => router.push({
-                pathname: '/search',
-                params: {
-                  tag: tag
-                }
-              })}
+              onPress={() =>
+                router.push({
+                  pathname: "/search",
+                  params: { tag },
+                })
+              }
             >
               <Text style={styles.tag}>#{tag}</Text>
             </TouchableOpacity>
-
           ))}
         </View>
 
+        {/* 좋아요 / 댓글 */}
         <View style={styles.icons}>
           <View style={styles.icon}>
             <TouchableOpacity onPress={toggleHeart}>
@@ -160,7 +168,7 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           </View>
           <View style={styles.icon}>
             <Ionicons name="chatbox" size={27} color="#dfc8ba" />
-            <Text style={styles.count}>{post.comments.length}</Text>
+            <Text style={styles.count}>{Array.isArray(post.comments) ? post.comments.length : 0}</Text>
           </View>
         </View>
 
@@ -173,7 +181,6 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
         visible={isViewerVisible}
         onRequestClose={() => setIsViewerVisible(false)}
       />
-
     </View>
   );
 }
@@ -191,7 +198,13 @@ const styles = StyleSheet.create({
   imageScroll: { marginHorizontal: 20, marginTop: 5 },
   imageItem: { width: 200, height: 200, borderRadius: 8, marginRight: 10 },
   tags: { marginHorizontal: 20, flexDirection: "row", gap: 8, marginTop: 5 },
-  tag: { backgroundColor: "#bda08b", paddingHorizontal: 10, paddingVertical: 8, color: "#f0f0e5", borderRadius: 20 },
+  tag: {
+    backgroundColor: "#bda08b",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: "#f0f0e5",
+    borderRadius: 20,
+  },
   icons: { marginHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 10, marginTop: 5 },
   icon: { flexDirection: "row", alignItems: "center", gap: 5 },
   count: { fontSize: 15, color: "#f0f0e5" },

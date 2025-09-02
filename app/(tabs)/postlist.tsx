@@ -25,7 +25,7 @@ export default function PostList() {
   };
 
   const fetchPosts = async () => {
-    let query = supabase
+    const { data, error } = await supabase
       .from("posts")
       .select(`
         id,
@@ -33,6 +33,7 @@ export default function PostList() {
         content,
         tags,
         images,
+        wishlist_ids,
         created_at,
         profiles (
           id,
@@ -45,7 +46,6 @@ export default function PostList() {
         comments (id)
       `);
 
-    const { data, error } = await query;
     if (error) {
       console.error("Error fetching posts:", error);
       setPosts([]);
@@ -67,24 +67,16 @@ export default function PostList() {
       const diff = day === 0 ? 6 : day - 1;
       startOfWeek.setDate(now.getDate() - diff);
       startOfWeek.setHours(0, 0, 0, 0);
-
-      formatted = formatted.filter(
-        (post) => new Date(post.created_at) >= startOfWeek
-      );
+      formatted = formatted.filter(post => new Date(post.created_at) >= startOfWeek);
     } else if (selectedTab === "이번 달 인기🔥") {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      formatted = formatted.filter(
-        (post) => new Date(post.created_at) >= startOfMonth
-      );
+      formatted = formatted.filter(post => new Date(post.created_at) >= startOfMonth);
     }
 
     if (sortOption === "popular") {
-      formatted = formatted.sort((a, b) => b.hearts.length - a.hearts.length);
+      formatted.sort((a, b) => b.hearts.length - a.hearts.length);
     } else {
-      formatted = formatted.sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      formatted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
     setPosts(formatted);
@@ -107,7 +99,7 @@ export default function PostList() {
       </View>
 
       <View style={styles.tabContainer}>
-        {tabs.map((tab) => (
+        {tabs.map(tab => (
           <TouchableOpacity
             key={tab}
             style={[styles.tabButton, selectedTab === tab && styles.tabButtonSelected]}
@@ -141,15 +133,11 @@ export default function PostList() {
         </View>
       )}
 
-
       <FlatList
         data={posts}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => handlePostPress(item)}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity onPress={() => handlePostPress(item)} activeOpacity={0.8}>
             <PostCard post={item} currentUser={currentUser} />
           </TouchableOpacity>
         )}
@@ -160,7 +148,7 @@ export default function PostList() {
         style={styles.floatingTextButton}
         onPress={() => router.push("/add-post")}
       >
-        <Text style={styles.floatingText}>글쓰기</Text>
+        <Text style={styles.floatingText}>post</Text>
         <Ionicons name="pencil" size={15} color="#9c7866" />
       </TouchableOpacity>
     </SafeAreaView>
@@ -176,10 +164,10 @@ const styles = StyleSheet.create({
   tabButtonSelected: { backgroundColor: "#f0f0e5" },
   tabText: { color: '#f0f0e5' },
   tabTextSelected: { color: "#9c7866", fontWeight: 'bold' },
-  sortContainer: { flexDirection: "row", marginHorizontal: 20, marginVertical: 10, gap: 8, paddingVertical: 10, },
+  sortContainer: { flexDirection: "row", marginHorizontal: 20, marginVertical: 10, gap: 8, paddingVertical: 10 },
   sortButton: {},
   sortSelected: {},
-  sortText: { color: "rgba(240, 240, 229, 0.5)", fontSize: 15, },
+  sortText: { color: "rgba(240, 240, 229, 0.5)", fontSize: 15 },
   sortTextSelected: { color: "#f0f0e5" },
   floatingTextButton: {
     flexDirection: 'row',
@@ -196,3 +184,4 @@ const styles = StyleSheet.create({
   },
   floatingText: { fontSize: 16, color: "#9c7866" },
 });
+

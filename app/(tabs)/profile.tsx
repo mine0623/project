@@ -221,75 +221,11 @@ export default function Profile() {
         }
 
         return (
-            <FlatList
-                data={votes}
-                keyExtractor={(item) => item.id.toString()}
-                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
-                renderItem={({ item }) => {
-                    const results: Record<string, number> = item.results ?? {};
-                    const totalVotes = Object.values(results).reduce(
-                        (sum, c) => sum + (typeof c === "number" ? c : 0),
-                        0
-                    );
-
-                    return (
-                        <View style={styles.voteCard}>
-                            <Text style={styles.voteTitle}>{item.content}</Text>
-
-                            {item.images?.length > 0 && (
-                                <View style={styles.voteImageContainer}>
-                                    {item.images.map((imgUrl: string, idx: number) => (
-                                        <Image
-                                            key={idx}
-                                            source={{ uri: imgUrl }}
-                                            style={styles.voteImage}
-                                            resizeMode="cover"
-                                        />
-                                    ))}
-                                </View>
-                            )}
-
-                            <View style={styles.resultsContainer}>
-                                <View style={styles.singleResultBar}>
-                                    {Object.entries(results).map(([choice, count], idx) => {
-                                        const c = count as number;
-                                        const percentage = totalVotes > 0 ? (c / totalVotes) * 100 : 0;
-
-                                        return (
-                                            <View
-                                                key={choice}
-                                                style={[
-                                                    styles.singleResultSegment,
-                                                    {
-                                                        flex: c,
-                                                        backgroundColor: idx === 0 ? "#f0f0e5" : "#b7aa93", // 선택지마다 색 구분
-                                                    },
-                                                ]}
-                                            />
-                                        );
-                                    })}
-                                </View>
-
-                                <View style={styles.resultLabelRow}>
-                                    {Object.entries(results).map(([choice, count]) => {
-                                        const c = count as number;
-                                        const percentage = totalVotes > 0 ? (c / totalVotes) * 100 : 0;
-
-                                        return (
-                                            <Text key={choice} style={styles.percentageText}>
-                                                {choice}: {c}표 ({percentage.toFixed(1)}%)
-                                            </Text>
-                                        );
-                                    })}
-                                </View>
-                            </View>
-
-
-                            <Text style={styles.voteDate}>{new Date(item.created_at).toLocaleDateString()}</Text>
-                        </View>
-                    );
-                }}
-            />
+            <>
+                <View>
+                    
+                </View>
+            </>
         );
     };
 

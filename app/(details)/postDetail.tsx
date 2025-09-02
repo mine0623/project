@@ -172,20 +172,6 @@ export default function PostDetail() {
                     <Text style={styles.commentText}>{c.content}</Text>
                   </View>
                 </View>
-
-
-                <View style={styles.heart}>
-                  <TouchableOpacity 
-                    onPress={() => toggleCommentLike(c.id, currentUser.id)}
-                  >
-                    <Ionicons
-                      name="heart"
-                      size={27}
-                      color={c.likedByCurrentUser ? "#e5c1bd" : "rgba(240, 240, 229, 0.2)"}
-                    />
-                  </TouchableOpacity>
-                  <Text style={styles.count}>{c.like_count}</Text>
-                </View>
               </View>
             ))}
           </View>
