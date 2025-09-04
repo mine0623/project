@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import PostCard from "@/app/(details)/postCard";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function PostList() {
   const [selectedTab, setSelectedTab] = useState("전체");
@@ -13,6 +14,12 @@ export default function PostList() {
   const router = useRouter();
 
   const tabs: string[] = ["전체", "이번 주 인기🔥", "이번 달 인기🔥"];
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchPosts();
+    }, [])
+  )
 
   useEffect(() => {
     getCurrentUser();
@@ -28,23 +35,23 @@ export default function PostList() {
     const { data, error } = await supabase
       .from("posts")
       .select(`
+      id,
+      title,
+      content,
+      tags,
+      images,
+      wishlist_ids,
+      created_at,
+      profiles (
         id,
-        title,
-        content,
-        tags,
-        images,
-        wishlist_ids,
-        created_at,
-        profiles (
-          id,
-          name,
-          gender,
-          avatar_url,
-          birth_year
-        ),
-        hearts (user_id),
-        comments (id)
-      `);
+        name,
+        gender,
+        avatar_url,
+        birth_year
+      ),
+      hearts (user_id),
+      comments (id)
+    `);
 
     if (error) {
       console.error("Error fetching posts:", error);
@@ -61,6 +68,8 @@ export default function PostList() {
     }));
 
     const now = new Date();
+
+    // 날짜 필터
     if (selectedTab === "이번 주 인기🔥") {
       const startOfWeek = new Date(now);
       const day = now.getDay();
@@ -73,14 +82,22 @@ export default function PostList() {
       formatted = formatted.filter(post => new Date(post.created_at) >= startOfMonth);
     }
 
-    if (sortOption === "popular") {
-      formatted.sort((a, b) => b.hearts.length - a.hearts.length);
+    // 정렬
+    if (selectedTab === "이번 주 인기🔥" || selectedTab === "이번 달 인기🔥") {
+      // 인기순: 하트 + 댓글 수
+      formatted.sort((a, b) => (b.hearts.length + b.comments.length) - (a.hearts.length + a.comments.length));
     } else {
-      formatted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // 전체 탭
+      if (sortOption === "popular") {
+        formatted.sort((a, b) => (b.hearts.length + b.comments.length) - (a.hearts.length + a.comments.length));
+      } else {
+        formatted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      }
     }
 
     setPosts(formatted);
   };
+
 
   const handlePostPress = (post: any) => {
     router.push({
@@ -164,11 +181,11 @@ const styles = StyleSheet.create({
   tabButtonSelected: { backgroundColor: "#f0f0e5" },
   tabText: { color: '#f0f0e5' },
   tabTextSelected: { color: "#9c7866", fontWeight: 'bold' },
-  sortContainer: { flexDirection: "row", marginHorizontal: 20, marginVertical: 10, gap: 8, paddingVertical: 10 },
+  sortContainer: { justifyContent: 'flex-end', flexDirection: "row", marginHorizontal: 20, marginVertical: 10, gap: 8, paddingVertical: 10 },
   sortButton: {},
   sortSelected: {},
-  sortText: { color: "rgba(240, 240, 229, 0.5)", fontSize: 15 },
-  sortTextSelected: { color: "#f0f0e5" },
+  sortText: { color: "rgba(240, 240, 229, 0.8)", },
+  sortTextSelected: { color: '#f0f0e5', fontWeight: 'bold' },
   floatingTextButton: {
     flexDirection: 'row',
     position: "absolute",

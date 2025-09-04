@@ -24,7 +24,6 @@ export default function Profile() {
     const [selectedTab, setSelectedTab] = useState<"post" | "vote">("post");
     const [loadingVotes, setLoadingVotes] = useState(true);
     const router = useRouter();
-
     useEffect(() => {
         const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
             Alert.alert("알림", "로그아웃 후 뒤로가기가 가능합니다.", [{ text: "확인" }]);
@@ -122,7 +121,7 @@ export default function Profile() {
             const votesWithResults = await Promise.all(
                 (votesData ?? []).map(async (vote: any) => {
                     const { data: resultsData } = await supabase
-                        .from("vote_results")
+                        .from("vote_responses")
                         .select("choice")
                         .eq("vote_id", vote.id);
 
@@ -132,6 +131,7 @@ export default function Profile() {
                     });
 
                     return { ...vote, results };
+
                 })
             );
 
@@ -141,6 +141,7 @@ export default function Profile() {
 
         fetchMyVotes();
     }, [currentUser]);
+
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -220,15 +221,136 @@ export default function Profile() {
             );
         }
 
-        return (
-            <>
-                <View>
-                    
+        const handleDeleteVote = async (voteId: string) => {
+            Alert.alert("투표 종료", "정말 삭제하시겠습니까?", [
+                { text: "취소", style: "cancel" },
+                {
+                    text: "확인",
+                    onPress: async () => {
+                        // 1. responses 삭제
+                        const { error: responseError } = await supabase
+                            .from("vote_responses")
+                            .delete()
+                            .eq("vote_id", voteId);
+
+                        if (responseError) {
+                            console.error("응답 삭제 실패:", responseError);
+                            Alert.alert("오류", "응답 삭제에 실패했습니다.");
+                            return;
+                        }
+
+                        // 2. vote 삭제
+                        const { error: voteError } = await supabase
+                            .from("votes")
+                            .delete()
+                            .eq("id", voteId);
+
+                        if (voteError) {
+                            console.error("투표 삭제 실패:", voteError);
+                            Alert.alert("오류", "투표 삭제에 실패했습니다.");
+                        } else {
+                            setVotes((prev) => prev.filter((v) => v.id !== voteId));
+                        }
+                    },
+                },
+            ]);
+        };
+
+
+        const renderVote = ({ item }: { item: any }) => {
+            const results = item.results || {};
+            const totalVotes = Object.values(results)
+                .map((v) => Number(v) || 0)
+                .reduce((a, b) => a + b, 0);
+
+            const firstKey = item.first_choice_content ?? "";
+            const secondKey = item.second_choice_content ?? "";
+
+            const getResultText = (choiceKey: string, fallback: string) => {
+                const count = Number(results[choiceKey]) || 0;
+                const percentage = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
+                return `${fallback}: ${Math.round(percentage)}% (${count}표)`;
+            };
+
+            const hasFirstImage = !!item.first_choice_image;
+            const hasSecondImage = !!item.second_choice_image;
+            const twoImages = hasFirstImage && hasSecondImage;
+
+            return (
+                <View style={styles.voteCard}>
+                    <View style={styles.imgs}>
+                        {hasFirstImage && (
+                            <Image
+                                source={{ uri: item.first_choice_image }}
+                                style={{ width: 150, height: 150, borderRadius: 12, marginBottom: 10 }}
+                                resizeMode="cover"
+                            />
+                        )}
+                        {hasSecondImage && (
+                            <Image
+                                source={{ uri: item.second_choice_image }}
+                                style={{ width: 150, height: 150, borderRadius: 12, marginBottom: 10 }}
+                                resizeMode="cover"
+                            />
+                        )}
+                    </View>
+
+                    {/* 결과 표시 */}
+                    <View style={styles.resultsContainer}>
+                        {/* 이미지가 2개일 땐 텍스트(살/말) 출력 X */}
+                        {twoImages ? (
+                            <>
+                                <Text style={styles.choiceText}>
+                                    {`${Math.round(((results[firstKey] || 0) / (totalVotes || 1)) * 100)}% (${results[firstKey] || 0}표)`}
+                                </Text>
+                                <Text style={styles.choiceText}>
+                                    {`${Math.round(((results[secondKey] || 0) / (totalVotes || 1)) * 100)}% (${results[secondKey] || 0}표)`}
+                                </Text>
+                            </>
+                        ) : (
+                            <>
+                                <Text style={styles.choiceText}>
+                                    {getResultText(firstKey, firstKey.trim() !== "" ? "살" : "말")}
+                                </Text>
+                                {secondKey !== null && secondKey !== undefined && (
+                                    <Text style={styles.choiceText}>
+                                        {getResultText(secondKey, secondKey.trim() !== "" ? "살" : "말")}
+                                    </Text>
+                                )}
+                            </>
+                        )}
+                    </View>
+
+                    <Text style={styles.voteDate}>
+                        {new Date(item.created_at).toLocaleDateString()}
+                    </Text>
+
+                    <TouchableOpacity
+                        onPress={() => handleDeleteVote(item.id)}
+                        style={{
+                            marginTop: 10,
+                            paddingVertical: 10,
+                            backgroundColor: "#f0f0e5",
+                            borderRadius: 20,
+                        }}
+                    >
+                        <Text style={{ color: "#9c7866", textAlign: "center", fontWeight: "bold", fontSize: 15 }}>
+                            종료하기
+                        </Text>
+                    </TouchableOpacity>
                 </View>
-            </>
+            );
+        };
+
+        return (
+            <FlatList
+                data={votes}
+                renderItem={renderVote}
+                keyExtractor={(item) => item.id.toString()}
+                showsVerticalScrollIndicator={false}
+            />
         );
     };
-
 
     return (
         <SafeAreaView style={styles.container}>
@@ -289,65 +411,29 @@ const styles = StyleSheet.create({
     content: { flex: 1 },
     scene: { flex: 1 },
     logout: {
-        color: '#9c7866',
+        color: '#f0f0e5',
         fontWeight: 'bold',
         backgroundColor: 'rgba(240, 240, 229, 0.2)',
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 20,
     },
-    underline: { borderBottomWidth: 1, borderColor: "#f0f0e580", marginTop: 10 }, loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+    underline: { borderBottomWidth: 1, borderColor: "#f0f0e580", marginTop: 10 },
+    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
     loadingText: { color: "#f0f0e5" },
     voteCard: {
-        backgroundColor: "rgba(240, 240, 229, 0.2)",
         borderRadius: 12,
         padding: 15,
-        marginVertical: 12,
-        marginHorizontal: 10,
+        marginTop: 15,
+        marginHorizontal: 30,
     },
     voteTitle: { color: "#f0f0e5", fontSize: 18, fontWeight: "bold", marginBottom: 10 },
-    voteImageScroll: { marginBottom: 10 },
-    voteImage: { width: 120, height: 120, borderRadius: 10, marginRight: 10 },
-    resultsContainer: { gap: 8, marginTop: 5 },
-    resultRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-    choiceText: { color: "#f0f0e5", flex: 1 },
-    resultBarBackground: {
-        flex: 3,
-        height: 10,
-        backgroundColor: "#b7aa93",
-        borderRadius: 5,
-        overflow: "hidden",
-    },
-    resultBarForeground: {
-        height: 10,
-        backgroundColor: "#f0f0e5",
-    },
-    percentageText: { color: "#f0f0e5", textAlign: "right" },
+    resultsContainer: { gap: 8, marginTop: 5, flexDirection: 'row', justifyContent: 'space-between' },
+    choiceText: { color: "#f0f0e5", fontSize: 16 },
     voteDate: { color: "rgba(240,240,229,0.5)", marginTop: 8, fontSize: 12, textAlign: "right" },
-    voteImageContainer: {
-        flexDirection: "row",
-        justifyContent: "center",
+    imgs: {
+        flexDirection: 'row',
         gap: 10,
-        marginBottom: 10,
+        justifyContent: 'center',
     },
-    singleResultBar: {
-        flexDirection: "row",
-        height: 20,
-        borderRadius: 10,
-        overflow: "hidden",
-        marginTop: 10,
-        marginHorizontal: 20,
-        backgroundColor: "#b7aa93",
-    },
-    singleResultSegment: {
-        height: "100%",
-    },
-    resultLabelRow: {
-        marginHorizontal: 20,
-        marginTop: 8,
-        flexDirection: "row",
-        justifyContent: "space-between",
-    },
-
-
 });

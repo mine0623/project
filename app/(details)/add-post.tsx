@@ -1,67 +1,86 @@
-import React, { useState, useEffect } from "react";
-import { router } from "expo-router";
+import React, { useState, useEffect, } from "react";
+import { router, useFocusEffect } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import {
     SafeAreaView,
     View,
     Text,
-    TouchableOpacity,
     TextInput,
-    StyleSheet,
-    Alert,
     Modal,
-    ScrollView,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
     Image,
+    StyleSheet,
+    FlatList,
+    Alert,
 } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+import { AntDesign, FontAwesome6 } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-import { decode as decodeBase64 } from "base64-arraybuffer";
+
+const decodeBase64 = (base64: string): ArrayBuffer => {
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+};
 
 export default function AddPost() {
+    const [visible, setVisible] = useState(false);
+    const [wishModalVisible, setWishModalVisible] = useState(false);
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
-    const [tags, setTags] = useState<string[]>(["여름", "추천", "질문", "룩북"]);
+    const [images, setImages] = useState<{ uri: string; base64: string | null }[]>([]);
+    const [selectedWishlist, setSelectedWishlist] = useState<any[]>([]);
+    const [wishlist, setWishlist] = useState<any[]>([]);
+
+    const [recommendedTags, setRecommendedTags] = useState<string[]>([]);
+    const [allTags, setAllTags] = useState<string[]>(["#추천", "#질문"]); // 기본 태그 포함
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [newTag, setNewTag] = useState("");
-    const [images, setImages] = useState<{ uri: string; base64: string | null }[]>([]);
-    const [wishlist, setWishlist] = useState<any[]>([]);
-    const [selectedWishlist, setSelectedWishlist] = useState<any[]>([]);
-    const [optionModalVisible, setOptionModalVisible] = useState(false);
-    const [wishModalVisible, setWishModalVisible] = useState(false);
 
     useEffect(() => {
-        const fetchWishlist = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data, error } = await supabase
-                .from("wishlist")
-                .select("*")
-                .eq("user_id", user.id);
-            if (error) console.error(error);
-            else setWishlist(data ?? []);
-        };
-        fetchWishlist();
+        fetchRecommendedTags();
     }, []);
 
-    const toggleTag = (tag: string) => {
-        setSelectedTags(prev =>
-            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-        );
+    const fetchRecommendedTags = async () => {
+        const { data, error } = await supabase.from("posts").select("tags");
+        if (error) return console.error("Error fetching tags:", error);
+
+        // 모든 태그 모으기
+        const allPostTags = (data ?? []).map((post: any) => post.tags ?? []).flat();
+
+        // 태그 사용 빈도 계산 (추천/질문 제외)
+        const tagCount: Record<string, number> = {};
+        allPostTags.forEach((tag: string) => {
+            if (tag && tag !== "추천" && tag !== "질문") {
+                tagCount[tag] = (tagCount[tag] || 0) + 1;
+            }
+        });
+
+        const sortedTags = Object.entries(tagCount)
+            .sort((a, b) => b[1] - a[1])
+            .map(([tag]) => `#${tag}`)
+            .slice(0, 5);
+
+        setRecommendedTags(sortedTags);
+
+        // allTags 상태에 추천 태그 합치기 (중복 제거)
+        setAllTags(prev => [...prev, ...sortedTags.filter(tag => !prev.includes(tag))]);
     };
 
-    const addTag = () => {
-        const tag = newTag.trim();
-        if (!tag) return;
-        if (!tags.includes(tag)) setTags(prev => [...prev, tag]);
-        if (!selectedTags.includes(tag)) setSelectedTags(prev => [...prev, tag]);
-        setNewTag("");
-    };
+    const openSheet = () => setVisible(true);
+    const closeSheet = () => setVisible(false);
 
     const pickImage = async () => {
         const remaining = 5 - (images.length + selectedWishlist.length);
-        if (remaining <= 0) return;
+        if (remaining <= 0) {
+            Alert.alert("선택 제한", "이미지와 위시리스트 합쳐서 최대 5개까지 선택 가능합니다.");
+            return;
+        }
 
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
@@ -85,179 +104,166 @@ export default function AddPost() {
             setImages(prev => [...prev, ...newImages]);
         }
 
-        setOptionModalVisible(false);
+        setVisible(false);
     };
 
-    const removeImage = (index: number) => setImages(prev => prev.filter((_, i) => i !== index));
+    const fetchWishlist = async () => {
+        try {
+            const { data, error } = await supabase
+                .from("wishlist")
+                .select("*")
+                .order("created_at", { ascending: false });
+            if (error) throw error;
+            setWishlist(data || []);
+            setVisible(false);
+            setWishModalVisible(true);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const toggleWishlist = (item: any) => {
         const totalSelected = images.length + selectedWishlist.length;
         const alreadySelected = selectedWishlist.some(w => w.id === item.id);
+
         if (alreadySelected) {
             setSelectedWishlist(prev => prev.filter(w => w.id !== item.id));
+            setImages(prev => prev.filter(img => img.uri !== item.image));
         } else {
             if (totalSelected >= 5) {
                 Alert.alert("선택 제한", "이미지와 위시리스트 합쳐서 최대 5개까지 선택 가능합니다.");
                 return;
             }
             setSelectedWishlist(prev => [...prev, item]);
+            setImages(prev => [...prev, { uri: item.image, base64: null }]);
         }
     };
 
-    const removeWishlist = (id: string) => setSelectedWishlist(prev => prev.filter(w => w.id !== id));
+    const removeImage = (uri: string) => {
+        setImages(prev => prev.filter(img => img.uri !== uri));
+        setSelectedWishlist(prev => prev.filter(w => w.image !== uri));
+    };
 
-    const getArrayBufferForUpload = async (uri: string, fallbackBase64?: string | null) => {
+    const addNewTag = () => {
+        if (!newTag.trim()) return;
+        const tag = newTag.startsWith("#") ? newTag : `#${newTag}`;
+
+        // allTags와 selectedTags에 추가 (중복 방지)
+        if (!allTags.includes(tag)) setAllTags([...allTags, tag]);
+        if (!selectedTags.includes(tag)) setSelectedTags([...selectedTags, tag]);
+
+        setNewTag("");
+    };
+
+    const handlePost = async () => {
         try {
-            const res = await fetch(uri);
-            const ab = res.arrayBuffer ? await res.arrayBuffer() : await (await res.blob()).arrayBuffer();
-            if (ab && ab.byteLength > 0) return ab;
-        } catch (e) {
-            console.warn("fetch->arrayBuffer failed:", e);
-        }
-        if (fallbackBase64) {
-            try {
-                return decodeBase64(fallbackBase64);
-            } catch (e) {
-                console.warn("base64 decode failed:", e);
+            if (!title.trim() || !content.trim()) {
+                Alert.alert("알림", "제목과 내용을 입력해주세요.");
+                return;
             }
-        }
-        try {
-            const fsB64 = await FileSystem.readAsStringAsync(uri, {
-                encoding: FileSystem.EncodingType.Base64,
-            });
-            return decodeBase64(fsB64);
-        } catch (e) {
-            console.warn("fs base64 decode failed:", e);
-        }
-        throw new Error("이미지 바이트를 확보하지 못했습니다.");
-    };
 
-    const mimeFromUri = (uri?: string | null) => {
-        if (!uri) return "application/octet-stream";
-        const ext = uri.split(".").pop()?.toLowerCase();
-        switch (ext) {
-            case "jpg":
-            case "jpeg":
-                return "image/jpeg";
-            case "png":
-                return "image/png";
-            case "webp":
-                return "image/webp";
-            default:
-                return "image/*";
-        }
-    };
+            const { data: userData, error: userError } = await supabase.auth.getUser();
+            if (userError || !userData?.user) {
+                Alert.alert("에러", "로그인한 사용자를 찾을 수 없습니다.");
+                return;
+            }
+            const user_id = userData.user.id;
 
-    const extFromMime = (mime: string) => {
-        if (mime.includes("jpeg")) return "jpg";
-        if (mime.includes("png")) return "png";
-        if (mime.includes("webp")) return "webp";
-        return "bin";
-    };
-
-    const submitPost = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const imageUrls: string[] = [];
-
+            const uploadedUrls: string[] = [];
             for (const img of images) {
-                const mime = mimeFromUri(img.uri);
-                const ext = extFromMime(mime);
-                const fileName = `${Date.now()}.${ext}`;
-                const arrayBuffer = await getArrayBufferForUpload(img.uri, img.base64);
-                const { error } = await supabase.storage.from("posts").upload(fileName, arrayBuffer, { contentType: mime, upsert: true });
-                if (error) throw error;
-
-                const { data: pub } = supabase.storage.from("posts").getPublicUrl(fileName);
-                imageUrls.push(pub?.publicUrl ?? "");
+                if (img.base64) {
+                    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+                    const { error: uploadError } = await supabase.storage
+                        .from("posts")
+                        .upload(fileName, decodeBase64(img.base64), {
+                            contentType: "image/jpeg",
+                        });
+                    if (uploadError) {
+                        console.error(uploadError);
+                        Alert.alert("업로드 실패", "이미지 업로드 중 오류가 발생했습니다.");
+                        return;
+                    }
+                    const { data: publicUrl } = supabase.storage
+                        .from("posts")
+                        .getPublicUrl(fileName);
+                    uploadedUrls.push(publicUrl.publicUrl);
+                } else {
+                    uploadedUrls.push(img.uri);
+                }
             }
 
-            const { error } = await supabase.from("posts").insert([{
-                user_id: user.id,
-                title,
-                content,
-                tags: selectedTags,
-                images: imageUrls,
-                wishlist_ids: selectedWishlist.map(w => w.id),
-            }]);
+            const wishlistIds = selectedWishlist.map((w) => w.id);
 
-            if (error) throw error;
-            Alert.alert("저장 완료!");
+            // selectedTags에서 # 제거 후 저장
+            const tagsToSave = selectedTags.map(tag => tag.replace(/^#/, ""));
+
+            const { error } = await supabase.from("posts").insert([
+                {
+                    user_id,
+                    title,
+                    content,
+                    tags: tagsToSave,
+                    images: uploadedUrls,
+                    wishlist_ids: wishlistIds,
+                },
+            ]);
+
+            if (error) {
+                console.error(error);
+                Alert.alert("에러", "게시물 저장 중 문제가 발생했습니다.");
+                return;
+            }
+
+            Alert.alert("성공", "게시물이 등록되었습니다.");
             router.back();
-        } catch (err: any) {
-            console.log(err);
-            Alert.alert("저장 실패", err.message);
+        } catch (err) {
+            console.error(err);
+            Alert.alert("에러", "알 수 없는 오류가 발생했습니다.");
         }
     };
+
+
+    const combinedData = [...images.map(img => ({ uri: img.uri }))];
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
                     <AntDesign name="close" size={30} color="#f0f0e5" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={submitPost}>
-                    <Text style={styles.buttonText}>post</Text>
-                </TouchableOpacity>
             </View>
 
-            {/* 이미지 + 위시 박스 */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollContainer}>
-                <TouchableOpacity style={styles.box} onPress={() => setOptionModalVisible(true)}>
-                    <Ionicons name="add" size={25} color="#f0f0e5" />
-                </TouchableOpacity>
-                {images.map((img, idx) => (
-                    <TouchableOpacity key={`img-${idx}`} style={styles.itemBox} onPress={() => removeImage(idx)}>
-                        <Image source={{ uri: img.uri }} style={styles.itemImage} />
-                    </TouchableOpacity>
-                ))}
-                {selectedWishlist.map((wish, idx) => (
-                    <TouchableOpacity key={`wish-${idx}`} style={styles.itemBox} onPress={() => removeWishlist(wish.id)}>
-                        <Text style={styles.itemText}>{wish.name}</Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            <View style={styles.boxContainer}>
+                <FlatList
+                    data={combinedData}
+                    keyExtractor={(_, idx) => idx.toString()}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    ListHeaderComponent={() =>
+                        combinedData.length < 5 ? (
+                            <TouchableOpacity style={styles.box} onPress={openSheet}>
+                                <FontAwesome6 name="add" size={25} color="#f0f0e5" />
+                            </TouchableOpacity>
+                        ) : null
+                    }
+                    renderItem={({ item }) => (
+                        <View style={styles.box}>
+                            <Image
+                                source={{ uri: item.uri }}
+                                style={styles.image}
+                                resizeMode="cover"
+                            />
+                            <TouchableOpacity
+                                style={styles.deleteIcon}
+                                onPress={() => removeImage(item.uri)}
+                            >
+                                <AntDesign name="closecircle" size={22} color="#f0f0e5" />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                />
+            </View>
 
-            {/* 옵션 모달 */}
-            <Modal transparent visible={optionModalVisible} animationType="fade" onRequestClose={() => setOptionModalVisible(false)}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalBox}>
-                        <TouchableOpacity style={styles.modalButton} onPress={pickImage}>
-                            <Text style={styles.modalButtonText}>이미지 추가</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalButton} onPress={() => { setOptionModalVisible(false); setWishModalVisible(true); }}>
-                            <Text style={styles.modalButtonText}>위시리스트 선택</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.modalButton, { backgroundColor: "#ccc" }]} onPress={() => setOptionModalVisible(false)}>
-                            <Text style={[styles.modalButtonText, { color: "#333" }]}>취소</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* 위시 모달 */}
-            <Modal transparent visible={wishModalVisible} animationType="fade" onRequestClose={() => setWishModalVisible(false)}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalBox}>
-                        <Text style={styles.modalTitle}>위시 선택</Text>
-                        <ScrollView style={{ maxHeight: 200 }}>
-                            {wishlist.map(w => (
-                                <TouchableOpacity key={w.id} style={styles.modalButton} onPress={() => { toggleWishlist(w); setWishModalVisible(false); }}>
-                                    <Text>{w.name}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity style={[styles.modalButton, { backgroundColor: "#ccc" }]} onPress={() => setWishModalVisible(false)}>
-                            <Text style={{ color: "#333" }}>취소</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* 제목 / 내용 / 태그 */}
             <View style={styles.main}>
                 <TextInput
                     style={styles.titleInput}
@@ -275,63 +281,224 @@ export default function AddPost() {
                     onChangeText={setContent}
                     maxLength={150}
                 />
+            </View>
 
-                {/* 태그 */}
-                <View style={{ gap: 10 }}>
-                    <View style={styles.tags}>
-                        {tags.map(tag => {
-                            const selected = selectedTags.includes(tag);
-                            return (
-                                <TouchableOpacity key={tag} style={[styles.tag, selected && styles.tagSelected]} onPress={() => toggleTag(tag)}>
-                                    <Text style={[styles.tagText, selected && styles.tagTextSelected]}>#{tag}</Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                    <View style={styles.addTagContainer}>
-                        <TextInput
-                            style={styles.addTagInput}
-                            placeholder="새 태그 입력"
-                            placeholderTextColor="rgba(240,240,229,0.5)"
-                            value={newTag}
-                            onChangeText={setNewTag}
-                            onSubmitEditing={addTag}
-                        />
-                        <TouchableOpacity onPress={addTag}>
-                            <Text style={styles.addTagButton}>추가</Text>
+            {/* 태그 영역 */}
+            <View style={{ marginHorizontal: 30, marginBottom: 10 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    {allTags.map(tag => (
+                        <TouchableOpacity
+                            key={tag}
+                            style={[styles.tag, selectedTags.includes(tag) && styles.selectedTag]}
+                            onPress={() => {
+                                if (selectedTags.includes(tag)) {
+                                    setSelectedTags(selectedTags.filter(t => t !== tag));
+                                } else {
+                                    setSelectedTags([...selectedTags, tag]);
+                                }
+                            }}
+                        >
+                            <Text style={{ color: "#f0f0e5" }}>{tag}</Text>
                         </TouchableOpacity>
-                    </View>
+                    ))}
+                </View>
+
+                <View style={{ flexDirection: "row", marginTop: 8, gap: 10 }}>
+                    <TextInput
+                        style={styles.newTagInput}
+                        placeholder="새 태그 입력"
+                        placeholderTextColor="rgba(240,240,229,0.5)"
+                        value={newTag}
+                        onChangeText={setNewTag}
+                    />
+                    <TouchableOpacity onPress={addNewTag} style={styles.addTagButton}>
+                        <Text style={styles.addTagButton}>추가</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
+
+            <TouchableOpacity onPress={handlePost}>
+                <Text style={styles.button}>post</Text>
+            </TouchableOpacity>
+
+            {/* 이미지/위시 선택 모달 */}
+            <Modal visible={visible} transparent animationType="fade">
+                <TouchableWithoutFeedback onPress={closeSheet}>
+                    <View style={styles.overlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.popup}>
+                                <Text style={styles.popupText}>please choose</Text>
+                                <View style={styles.add}>
+                                    <TouchableOpacity onPress={pickImage}>
+                                        <Text style={styles.addButton}>image</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={fetchWishlist}>
+                                        <Text style={styles.addButton}>wish</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
+
+            {/* 위시리스트 모달 */}
+            <Modal visible={wishModalVisible} transparent animationType="slide">
+                <TouchableWithoutFeedback onPress={() => setWishModalVisible(false)}>
+                    <View style={styles.overlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={[styles.popup, { maxHeight: "70%" }]}>
+                                <Text style={styles.popupText}>wishlist</Text>
+                                <FlatList
+                                    data={wishlist}
+                                    keyExtractor={(item) => item.id}
+                                    renderItem={({ item }) => (
+                                        <TouchableOpacity
+                                            style={styles.wishItem}
+                                            onPress={() => toggleWishlist(item)}
+                                        >
+                                            <Image
+                                                source={{ uri: item.image }}
+                                                style={{ width: 60, height: 60, borderRadius: 8 }}
+                                            />
+                                            <View style={{ marginLeft: 10 }}>
+                                                <Text style={{ fontWeight: "bold" }}>{item.name}</Text>
+                                                <Text>{item.price}원</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    )}
+                                />
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
         </SafeAreaView>
     );
 }
 
-const BOX_SIZE = 80;
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#9c7866", paddingTop: 50 },
-    header: { flexDirection: "row", justifyContent: "space-between", marginHorizontal: 20, marginBottom: 20 },
-    button: { backgroundColor: "#f0f0e5", paddingVertical: 6, paddingHorizontal: 15, borderRadius: 20 },
-    buttonText: { fontSize: 16, fontWeight: "bold", color: "#9c7866" },
-    scrollContainer: { flexDirection: "row", paddingHorizontal: 20, marginBottom: 20 },
-    box: { width: BOX_SIZE, height: BOX_SIZE, borderRadius: 8, backgroundColor: "rgba(240,240,229,0.1)", alignItems: "center", justifyContent: "center", marginRight: 10 },
-    itemBox: { width: BOX_SIZE, height: BOX_SIZE, borderRadius: 8, backgroundColor: "#f0f0f0", marginRight: 10, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-    itemImage: { width: "100%", height: "100%", resizeMode: "cover" },
-    itemText: { fontSize: 14, textAlign: "center" },
-    modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
-    modalBox: { width: 250, backgroundColor: "#fff", borderRadius: 12, padding: 20, alignItems: "center" },
-    modalButton: { padding: 12, borderBottomWidth: 1, borderBottomColor: "#ddd", width: "100%", alignItems: "center" },
-    modalButtonText: { fontWeight: "bold" },
-    modalTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 10 },
-    main: { marginHorizontal: 20, gap: 10 },
-    titleInput: { fontSize: 20, fontWeight: "bold", color: "#f0f0e5", marginBottom: 10 },
-    contentInput: { height: 100, fontSize: 16, color: "#f0f0e5", textAlignVertical: "top" },
-    tags: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-    tag: { paddingHorizontal: 10, paddingVertical: 4, backgroundColor: "rgba(240,240,229,0.2)", borderRadius: 12 },
-    tagSelected: { backgroundColor: "#f0f0e5" },
-    tagText: { color: "#f0f0e5" },
-    tagTextSelected: { color: "#9c7866" },
-    addTagContainer: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
-    addTagInput: { flex: 1, borderBottomWidth: 1, borderBottomColor: "#f0f0e5", color: "#f0f0e5" },
-    addTagButton: { color: "#f0f0e5", fontWeight: "bold" },
+    container: { flex: 1, backgroundColor: "#9c7866" },
+    header: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginTop: 40,
+        marginHorizontal: 25,
+        marginBottom: 15,
+    },
+    main: { marginVertical: 20, marginHorizontal: 30 },
+    titleInput: {
+        fontSize: 20,
+        color: "#f0f0e5",
+        padding: 5,
+    },
+    contentInput: {
+        borderColor: "rgba(240, 240, 229, 0.5)",
+        borderWidth: 1,
+        marginTop: 10,
+        borderRadius: 10,
+        height: 80,
+        padding: 10,
+        fontSize: 15,
+        color: "#f0f0e5",
+    },
+    boxContainer: {
+        marginTop: 10,
+        marginHorizontal: 30,
+        flexDirection: "row"
+    },
+    box: {
+        borderRadius: 15,
+        borderWidth: 1,
+        borderColor: "rgba(240,240,229,0.3)",
+        width: 120,
+        height: 120,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(240,240,229,0.1)",
+        marginRight: 10,
+    },
+    image: { width: "100%", height: "100%", borderRadius: 15 },
+    tag: {
+        borderRadius: 20,
+        borderColor: 'rgba(240, 240, 229, 0.5)',
+        borderWidth: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        color: '#f0f0e5',
+        fontSize: 15,
+    },
+    selectedTag: {
+        backgroundColor: "rgba(183, 170, 147, 1)",
+    },
+    newTagInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: "rgba(240,240,229,0.5)",
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        color: "#f0f0e5",
+        height: 40,
+    },
+    addTagButton: {
+        paddingHorizontal: 10,
+        borderRadius: 20,
+        fontWeight: 'bold',
+        color: '#9c7866',
+        backgroundColor: "#f0f0e5",
+        justifyContent: "center",
+    },
+    overlay: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0.35)",
+    },
+    popup: {
+        width: "85%",
+        maxHeight: "80%",
+        backgroundColor: "#f0f0e5",
+        borderRadius: 15,
+        padding: 20,
+    },
+    popupText: { fontSize: 20, marginBottom: 10 },
+    add: { flexDirection: "row", justifyContent: "space-around", marginTop: 10 },
+    addButton: {
+        marginVertical: 10,
+        width: 130,
+        textAlign: "center",
+        color: "#f0f0e5",
+        fontSize: 18,
+        paddingVertical: 12,
+        borderRadius: 25,
+        backgroundColor: "#b7aa93",
+    },
+    button: {
+        marginHorizontal: 30,
+        color: "#9c7866",
+        fontSize: 20,
+        fontWeight: "700",
+        textAlign: "center",
+        borderRadius: 25,
+        borderWidth: 1,
+        borderColor: "#f0f0e5",
+        paddingVertical: 12,
+        marginTop: 20,
+        backgroundColor: "#f0f0e5",
+    },
+    wishItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        marginBottom: 5,
+    },
+    deleteIcon: {
+        position: "absolute",
+        top: 5,
+        right: 5,
+        backgroundColor: "rgba(0,0,0,0.4)",
+        borderRadius: 50,
+        padding: 2,
+    },
 });

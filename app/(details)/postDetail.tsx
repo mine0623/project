@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   ScrollView,
@@ -16,6 +15,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { AntDesign, Ionicons, FontAwesome6 } from "@expo/vector-icons";
 import PostCard from "@/app/(details)/postCard";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PostDetail() {
   const params = useLocalSearchParams<{ post: string | string[] }>();
@@ -63,20 +63,6 @@ export default function PostDetail() {
     }));
 
     setCurrentPost({ ...currentPost, comments: formattedComments });
-  };
-
-  // 좋아요 토글
-  const toggleCommentLike = async (commentId: number, userId: string) => {
-    const existingLike = currentPost.comments.find((c: any) => c.id === commentId)?.likedByCurrentUser;
-
-    if (existingLike) {
-      // 좋아요 취소
-      await supabase.from("comment_likes").delete().match({ comment_id: commentId, user_id: userId });
-    } else {
-      // 좋아요 추가
-      await supabase.from("comment_likes").insert([{ comment_id: commentId, user_id: userId }]);
-    }
-    fetchComments(); // 갱신
   };
 
   const addComment = async () => {
@@ -135,7 +121,7 @@ export default function PostDetail() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
@@ -181,12 +167,15 @@ export default function PostDetail() {
           <TextInput
             style={styles.commentInput}
             placeholder="댓글을 입력하세요..."
+            placeholderTextColor="#f0f0e5"
             value={newComment}
             onChangeText={setNewComment}
           />
-          <TouchableOpacity onPress={addComment}>
-            <Ionicons name="send" size={18} color="#f0f0e5" />
-          </TouchableOpacity>
+          {newComment.trim().length > 0 && (
+            <TouchableOpacity onPress={addComment}>
+              <Ionicons name="send" size={18} color="#f0f0e5" />
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -201,7 +190,7 @@ const styles = StyleSheet.create({
   commentItem: { flexDirection: "row", justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 10 },
   commentName: { fontWeight: "bold", color: "#f0f0e5", fontSize: 16 },
   commentText: { color: "#f0f0e5", fontSize: 15 },
-  commentInputContainer: { flexDirection: "row", alignItems: "center", paddingVertical: 15, paddingHorizontal: 25 },
+  commentInputContainer: { flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 25 },
   heart: { flexDirection: 'column', alignItems: 'center' },
   count: { color: '#f0f0e5' },
   time: { color: "rgba(240, 240, 229, 0.5)" },
