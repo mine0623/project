@@ -56,7 +56,7 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
   }, [post.wishlist_ids]);
 
   // 모든 이미지 합치기
-  const allImages = [...(Array.isArray(post.images) ? post.images : []), ...wishImages];
+  const allImages = [...(Array.isArray(post.images) ? post.images : [])];
 
   const getAgeGroup = (birth_year: number | null) => {
     if (!birth_year) return "연령대 없음";

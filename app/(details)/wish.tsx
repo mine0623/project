@@ -69,7 +69,7 @@ export default function Wish() {
                 {product.image && <Image source={{ uri: product.image }} style={styles.image} />}
                 <Text style={styles.text}>{product.store}</Text>
                 <Text style={styles.text}>{product.brand}</Text>
-                <Text style={styles.text}>{product.name}</Text>
+                <Text style={styles.name}>{product.name}</Text>
                 <Text style={styles.text}>{product.price}원</Text>
             </View>
 
@@ -106,11 +106,19 @@ const styles = StyleSheet.create({
     },
     main: {
         alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
         gap: 7,
     },
     text: {
         color: '#f0f0e5',
         fontSize: 18,
+    },
+    name: {
+        marginHorizontal: 20,
+        color: '#f0f0e5',
+        fontSize: 18,
+        textAlign: 'center',
     },
     buttons: {
         marginHorizontal: 20,

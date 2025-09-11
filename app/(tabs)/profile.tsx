@@ -310,11 +310,11 @@ export default function Profile() {
                         ) : (
                             <>
                                 <Text style={styles.choiceText}>
-                                    {getResultText(firstKey, firstKey.trim() !== "" ? "살" : "말")}
+                                    {getResultText(firstKey, firstKey.trim() !== "" ? "살까?" : "말까?")}
                                 </Text>
                                 {secondKey !== null && secondKey !== undefined && (
                                     <Text style={styles.choiceText}>
-                                        {getResultText(secondKey, secondKey.trim() !== "" ? "살" : "말")}
+                                        {getResultText(secondKey, secondKey.trim() !== "" ? "살까?" : "말까?")}
                                     </Text>
                                 )}
                             </>
@@ -424,16 +424,18 @@ const styles = StyleSheet.create({
     voteCard: {
         borderRadius: 12,
         padding: 15,
-        marginTop: 15,
-        marginHorizontal: 30,
+        marginVertical: 10,
+        marginHorizontal: 20,
     },
     voteTitle: { color: "#f0f0e5", fontSize: 18, fontWeight: "bold", marginBottom: 10 },
     resultsContainer: { gap: 8, marginTop: 5, flexDirection: 'row', justifyContent: 'space-between' },
     choiceText: { color: "#f0f0e5", fontSize: 16 },
-    voteDate: { color: "rgba(240,240,229,0.5)", marginTop: 8, fontSize: 12, textAlign: "right" },
+    voteDate: { color: "rgba(240,240,229,0.5)", fontSize: 12 },
     imgs: {
         flexDirection: 'row',
         gap: 10,
         justifyContent: 'center',
-    },
+        marginBottom: 10,
+    }
+
 });

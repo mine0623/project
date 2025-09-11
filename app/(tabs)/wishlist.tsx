@@ -59,7 +59,7 @@ export default function WishList() {
     if (!link.trim()) return null;
 
     try {
-      const res = await fetch('http://172.30.1.79:3000/parse-link', {
+      const res = await fetch('http://172.30.1.9:3000/parse-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: link }),
@@ -68,7 +68,7 @@ export default function WishList() {
       const data = await res.json();
 
       const newProduct = {
-        store: 'musinsa',
+        store: data.source || 'unknown',
         brand: data.brand || null,
         name: data.name || '',
         price: data.price?.toString() || '',
@@ -196,7 +196,13 @@ export default function WishList() {
             <View style={styles.item}>
               <Text>{item.store}</Text>
               <Text>{item.brand}</Text>
-              <Text>{item.name}</Text>
+              <Text
+                numberOfLines={1}        // 한 줄로 제한
+                ellipsizeMode="tail"     // 넘칠 경우 끝에 '...' 표시
+                style={{ maxWidth: 200 }} // 필요하면 최대 너비 지정
+              >
+                {item.name}
+              </Text>
               <Text>{item.price}원</Text>
             </View>
           </TouchableOpacity>

@@ -4,9 +4,9 @@ import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function Login() {
+    const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const router = useRouter();
     const [error, setError] = useState("");
 
     const onLogin = async () => {

@@ -49,7 +49,7 @@ export default function Signup() {
             },
         ]);
 
-        alert("회원가입 완료");
+        alert("회원가입 완료! 해당 메일함을 확인해 주세요.");
         router.back();
     };
 

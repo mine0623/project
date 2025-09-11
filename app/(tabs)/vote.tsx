@@ -227,7 +227,7 @@ export default function VoteViewer() {
                         onPress={() => !hasVoted && handleChoice("first")}
                     >
                         <Text style={styles.choiceText}>
-                            {hasVoted ? `${firstPercent}% (${results.first}표)` : isBuyOrNot ? "살" : "A"}
+                            {hasVoted ? `${firstPercent}% (${results.first}표)` : isBuyOrNot ? "살까?" : "A"}
                         </Text>
                     </TouchableOpacity>
 
@@ -237,7 +237,7 @@ export default function VoteViewer() {
                             onPress={() => !hasVoted && handleChoice("second")}
                         >
                             <Text style={styles.choiceText}>
-                                {hasVoted ? `${secondPercent}% (${results.second}표)` : isBuyOrNot ? "말" : "B"}
+                                {hasVoted ? `${secondPercent}% (${results.second}표)` : isBuyOrNot ? "말까?" : "B"}
                             </Text>
                         </TouchableOpacity>
                     )}
