@@ -59,7 +59,7 @@ export default function WishList() {
     if (!link.trim()) return null;
 
     try {
-      const res = await fetch('http://172.30.1.9:3000/parse-link', {
+      const res = await fetch('http:/172.30.1.6:3000/parse-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: link }),
@@ -143,7 +143,7 @@ export default function WishList() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.logo}>wishlist</Text>
+        <Text style={styles.logo}>위시리시트</Text>
         <TouchableOpacity style={styles.addbutton} onPress={openSheet}>
           <Text style={styles.addtext}>add</Text>
           <Ionicons name="add" size={15} color="#b7aa93" />

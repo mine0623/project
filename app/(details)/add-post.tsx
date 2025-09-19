@@ -50,10 +50,8 @@ export default function AddPost() {
         const { data, error } = await supabase.from("posts").select("tags");
         if (error) return console.error("Error fetching tags:", error);
 
-        // 모든 태그 모으기
         const allPostTags = (data ?? []).map((post: any) => post.tags ?? []).flat();
 
-        // 태그 사용 빈도 계산 (추천/질문 제외)
         const tagCount: Record<string, number> = {};
         allPostTags.forEach((tag: string) => {
             if (tag && tag !== "추천" && tag !== "질문") {
@@ -68,7 +66,7 @@ export default function AddPost() {
 
         setRecommendedTags(sortedTags);
 
-        // allTags 상태에 추천 태그 합치기 (중복 제거)
+
         setAllTags(prev => [...prev, ...sortedTags.filter(tag => !prev.includes(tag))]);
     };
 
@@ -148,7 +146,6 @@ export default function AddPost() {
         if (!newTag.trim()) return;
         const tag = newTag.startsWith("#") ? newTag : `#${newTag}`;
 
-        // allTags와 selectedTags에 추가 (중복 방지)
         if (!allTags.includes(tag)) setAllTags([...allTags, tag]);
         if (!selectedTags.includes(tag)) setSelectedTags([...selectedTags, tag]);
 
@@ -267,7 +264,7 @@ export default function AddPost() {
             <View style={styles.main}>
                 <TextInput
                     style={styles.titleInput}
-                    placeholder="제목을 입력해주세요"
+                    placeholder="제목을 입력해주세요."
                     placeholderTextColor="rgba(240,240,229,0.5)"
                     value={title}
                     onChangeText={setTitle}
@@ -318,7 +315,7 @@ export default function AddPost() {
             </View>
 
             <TouchableOpacity onPress={handlePost}>
-                <Text style={styles.button}>post</Text>
+                <Text style={styles.button}>완료</Text>
             </TouchableOpacity>
 
             {/* 이미지/위시 선택 모달 */}
@@ -327,13 +324,13 @@ export default function AddPost() {
                     <View style={styles.overlay}>
                         <TouchableWithoutFeedback>
                             <View style={styles.popup}>
-                                <Text style={styles.popupText}>please choose</Text>
+                                <Text style={styles.popupText}>선택</Text>
                                 <View style={styles.add}>
                                     <TouchableOpacity onPress={pickImage}>
-                                        <Text style={styles.addButton}>image</Text>
+                                        <Text style={styles.addButton}>이미지</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={fetchWishlist}>
-                                        <Text style={styles.addButton}>wish</Text>
+                                        <Text style={styles.addButton}>위시</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -388,14 +385,18 @@ const styles = StyleSheet.create({
     },
     main: { marginVertical: 20, marginHorizontal: 30 },
     titleInput: {
-        fontSize: 20,
+        borderColor: 'rgba(240, 240, 229, 0.5)',
+        borderWidth: 1,
+        borderRadius: 20,
+        fontSize: 18,
+        paddingHorizontal: 15,
         color: "#f0f0e5",
-        padding: 5,
+        padding: 10,
     },
     contentInput: {
         borderColor: "rgba(240, 240, 229, 0.5)",
         borderWidth: 1,
-        marginTop: 10,
+        marginTop: 20,
         borderRadius: 10,
         height: 80,
         padding: 10,
@@ -411,8 +412,8 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         borderWidth: 1,
         borderColor: "rgba(240,240,229,0.3)",
-        width: 120,
-        height: 120,
+        width: 150,
+        height: 150,
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "rgba(240,240,229,0.1)",

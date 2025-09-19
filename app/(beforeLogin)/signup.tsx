@@ -58,12 +58,12 @@ export default function Signup() {
     return (
         <SafeAreaView style={styles.background}>
             <View style={styles.container}>
-                <Text style={styles.text}>sign up</Text>
+                <Text style={styles.text}>회원가입</Text>
                 <View style={styles.tool}>
-                    <Text style={styles.inputText}>email</Text>
+                    <Text style={styles.inputText}>이메일</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="email"
+                        placeholder="이메일"
                         keyboardType="email-address"
                         autoCapitalize="none"
                         onChangeText={(text) => setEmail(text)}
@@ -72,10 +72,10 @@ export default function Signup() {
                     />
                 </View>
                 <View style={styles.tool}>
-                    <Text style={styles.inputText}>password</Text>
+                    <Text style={styles.inputText}>비밀번호</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="password"
+                        placeholder="비밀번호"
                         secureTextEntry
                         onChangeText={(text) => setPassword(text)}
                         value={password}
@@ -83,7 +83,7 @@ export default function Signup() {
                     />
                     <TextInput
                         style={styles.input}
-                        placeholder="Please enter again"
+                        placeholder="다시 입력해 주세요."
                         secureTextEntry
                         onChangeText={(text) => setPasswordConfirm(text)}
                         value={passwordConfirm}
@@ -92,7 +92,7 @@ export default function Signup() {
                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
                 </View>
                 <TouchableOpacity onPress={onSignUpPress}>
-                    <Text style={styles.button}>Sign up</Text>
+                    <Text style={styles.button}>회원가입</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>

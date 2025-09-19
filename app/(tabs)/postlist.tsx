@@ -109,7 +109,7 @@ export default function PostList() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.logo}>mine</Text>
+        <Text style={styles.logo}>게시물</Text>
         <TouchableOpacity onPress={() => router.push("/search")}>
           <Ionicons name="search" size={25} color="#f0f0e5" />
         </TouchableOpacity>
@@ -165,7 +165,7 @@ export default function PostList() {
         style={styles.floatingTextButton}
         onPress={() => router.push("/add-post")}
       >
-        <Text style={styles.floatingText}>post</Text>
+        <Text style={styles.floatingText}>게시물</Text>
         <Ionicons name="pencil" size={15} color="#9c7866" />
       </TouchableOpacity>
     </SafeAreaView>

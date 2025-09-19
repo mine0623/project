@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, Keyboard } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import ImageViewing from "react-native-image-viewing";
@@ -55,7 +55,6 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
     fetchWishImages();
   }, [post.wishlist_ids]);
 
-  // 모든 이미지 합치기
   const allImages = [...(Array.isArray(post.images) ? post.images : [])];
 
   const getAgeGroup = (birth_year: number | null) => {
@@ -120,7 +119,6 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           <Text style={styles.time}>{timeAgo(post.created_at)}</Text>
         </View>
 
-        {/* 이미지 */}
         {allImages.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
             {allImages.map((img: string, idx: number) => (
@@ -131,13 +129,11 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           </ScrollView>
         )}
 
-        {/* 글 */}
         <View style={styles.articles}>
           <Text style={styles.title}>{post.title}</Text>
           <Text style={styles.text}>{post.content}</Text>
         </View>
 
-        {/* 태그 */}
         <View style={styles.tags}>
           {post.tags?.map((tag: string, index: number) => (
             <TouchableOpacity

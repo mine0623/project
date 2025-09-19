@@ -4,10 +4,10 @@ import {
     View,
     Text,
     TouchableOpacity,
-    Image,
     StyleSheet,
     Alert,
     ScrollView,
+    Image,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
@@ -16,13 +16,16 @@ import { Ionicons } from "@expo/vector-icons";
 interface Vote {
     id: string;
     user_id: string;
-    first_choice_image: string | null;
     first_choice_wish_id: string | null;
     first_choice_content: string;
-    second_choice_image: string | null;
     second_choice_wish_id: string | null;
     second_choice_content: string | null;
     created_at: string | null;
+}
+
+interface WishInfo {
+    name: string;
+    price: string | number;
 }
 
 export default function VoteViewer() {
@@ -34,6 +37,8 @@ export default function VoteViewer() {
         second: 0,
     });
     const [hasVoted, setHasVoted] = useState(false);
+    const [wishImages, setWishImages] = useState<{ [key: string]: string }>({});
+    const [wishInfos, setWishInfos] = useState<{ [wishId: string]: WishInfo }>({});
     const router = useRouter();
 
     useEffect(() => {
@@ -43,6 +48,26 @@ export default function VoteViewer() {
     useEffect(() => {
         if (userId) fetchVotes();
     }, [userId]);
+
+    useEffect(() => {
+        if (!votes[currentIndex]) return;
+        const { first_choice_wish_id, second_choice_wish_id } = votes[currentIndex];
+
+        if (first_choice_wish_id && !wishImages[first_choice_wish_id])
+            fetchWishImage(first_choice_wish_id);
+        if (second_choice_wish_id && !wishImages[second_choice_wish_id])
+            fetchWishImage(second_choice_wish_id);
+    }, [currentIndex, votes]);
+
+    useEffect(() => {
+        const vote = votes[currentIndex];
+        if (!vote) return;
+
+        if (vote.first_choice_wish_id && !wishInfos[vote.first_choice_wish_id])
+            fetchWishInfo(vote.first_choice_wish_id);
+        if (vote.second_choice_wish_id && !wishInfos[vote.second_choice_wish_id])
+            fetchWishInfo(vote.second_choice_wish_id);
+    }, [currentIndex, votes]);
 
     const getUser = async () => {
         const { data, error } = await supabase.auth.getUser();
@@ -86,26 +111,82 @@ export default function VoteViewer() {
         }
     };
 
+    const fetchWishImage = async (wishId: string) => {
+
+        const { data, error } = await supabase
+            .from("wishlist")
+            .select("id, image, name, price")
+            .eq("id", wishId)
+            .single();
+
+
+        if (error) console.error("Wish Image Fetch Error:", error);
+        else {
+            console.log("Wish Image Data:", data);
+            setWishImages((prev) => ({ ...prev, [wishId]: data.image }));
+        }
+    };
+
+    const fetchWishInfo = async (wishId: string) => {
+        if (!wishId) return;
+
+        try {
+            const { data, error } = await supabase
+                .from("wishlist")
+                .select("id, name, price")
+                .eq("id", wishId)
+                .single();
+
+            if (error) throw error;
+
+            if (data) {
+                setWishInfos(prev => ({
+                    ...prev,
+                    [wishId]: { name: data.name, price: data.price }
+                }));
+            }
+        } catch (err: any) {
+            console.error("Wish Info Fetch Error:", err.message);
+        }
+    };
 
     const fetchResults = async (voteId: string) => {
-        const { data, error } = await supabase.from("vote_responses").select("choice");
-        if (error) return console.error(error);
+        try {
+            const { data, error } = await supabase
+                .from("vote_responses")
+                .select("choice")
+                .eq("vote_id", voteId);
 
-        const firstCount = data.filter(
-            (r) => r.choice === votes[currentIndex]?.first_choice_content
-        ).length;
-        const secondCount = data.filter(
-            (r) => r.choice === votes[currentIndex]?.second_choice_content
-        ).length;
+            if (error) throw error;
 
-        setResults({ first: firstCount, second: secondCount });
+            let firstCount = 0;
+            let secondCount = 0;
+
+            const vote = votes[currentIndex];
+            if (!vote) return;
+
+            const isBuyOrNot = !vote.second_choice_content && !vote.second_choice_wish_id;
+
+            data?.forEach((r: any) => {
+                if (isBuyOrNot) {
+                    if (r.choice === "살까") firstCount++;
+                    else if (r.choice === "말까") secondCount++;
+                } else {
+                    if (r.choice === "A") firstCount++;
+                    else if (r.choice === "B") secondCount++;
+                }
+            });
+
+            setResults({ first: firstCount, second: secondCount });
+        } catch (err: any) {
+            console.error("fetchResults 오류:", err.message);
+        }
     };
+
 
     const getTitle = (vote: Vote) => {
         const secondEmpty =
-            !vote.second_choice_content &&
-            !vote.second_choice_image &&
-            !vote.second_choice_wish_id;
+            !vote.second_choice_content && !vote.second_choice_wish_id;
         return secondEmpty ? "살까? 말까?" : "둘 중 골라줘";
     };
 
@@ -115,22 +196,30 @@ export default function VoteViewer() {
             setHasVoted(false);
             setResults({ first: 0, second: 0 });
         } else {
-            // 더 이상 투표가 없으면 votes 배열 초기화
             setVotes([]);
         }
     };
 
-
     const handleChoice = async (choice: "first" | "second") => {
         const vote = votes[currentIndex];
-        if (!vote || !userId) return Alert.alert("로그인 필요", "투표하려면 로그인하세요.");
+        if (!vote || !userId)
+            return Alert.alert("로그인 필요", "투표하려면 로그인하세요.");
+
+        let choiceValue: string | null = null;
+        const isBuyOrNot = getTitle(vote) === "살까? 말까?";
+
+        if (isBuyOrNot) {
+            choiceValue = choice === "first" ? "살까" : "말까";
+        } else {
+            choiceValue = choice === "first" ? "A" : "B";
+        }
 
         try {
             const { error } = await supabase.from("vote_responses").insert([
                 {
                     vote_id: vote.id,
                     user_id: userId,
-                    choice: choice === "first" ? vote.first_choice_content : vote.second_choice_content,
+                    choice: choiceValue
                 },
             ]);
 
@@ -146,13 +235,11 @@ export default function VoteViewer() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
-                    <Text style={styles.logo}>vote</Text>
+                    <Text style={styles.logo}>투표</Text>
                 </View>
 
                 <View style={[styles.main, { flex: 1, justifyContent: "center" }]}>
-                    <Text style={styles.text}>
-                        모든 투표가 끝났습니다.
-                    </Text>
+                    <Text style={styles.text}>모든 투표가 끝났습니다.</Text>
                 </View>
 
                 <TouchableOpacity
@@ -165,14 +252,10 @@ export default function VoteViewer() {
             </SafeAreaView>
         );
 
-
     const vote = votes[currentIndex];
     const isBuyOrNot = getTitle(vote) === "살까? 말까?";
     const hasSecondChoice =
-        isBuyOrNot ||
-        vote.second_choice_content ||
-        vote.second_choice_image ||
-        vote.second_choice_wish_id;
+        isBuyOrNot || vote.second_choice_content || vote.second_choice_wish_id;
 
     const totalVotes = results.first + results.second || 1;
     const firstPercent = Math.round((results.first / totalVotes) * 100);
@@ -187,47 +270,75 @@ export default function VoteViewer() {
             <ScrollView contentContainerStyle={styles.main}>
                 <Text style={styles.title}>{getTitle(vote)}</Text>
 
-                {/* 선택지 박스 */}
-                <View style={[styles.boxContainer, !hasSecondChoice && { justifyContent: "center" }]}>
-                    {[vote.first_choice_content, vote.second_choice_content].map((_, idx) => {
-                        const isFirst = idx === 0;
-                        const content = isFirst ? vote.first_choice_content : vote.second_choice_content;
-                        const image = isFirst ? vote.first_choice_image : vote.second_choice_image;
-                        const wishId = isFirst ? vote.first_choice_wish_id : vote.second_choice_wish_id;
-                        const percent = isFirst ? firstPercent : secondPercent;
-                        if (!content) return null;
-
-                        return (
-                            <View
-                                key={idx}
-                                style={[styles.voteBox, !hasSecondChoice && { width: 300, height: 300 }]}
-                            >
-                                {image && (
-                                    <Image
-                                        source={{ uri: image }}
-                                        style={{
-                                            width: !hasSecondChoice ? 250 : 150,
-                                            height: !hasSecondChoice ? 250 : 150,
-                                            borderRadius: 12,
-                                            marginBottom: 10,
-                                        }}
-                                    />
-                                )}
-                                {wishId && <Text>Wish ID: {wishId}</Text>}
-                                <Text style={styles.text}>{content}</Text>
-                            </View>
-                        );
-                    })}
+                <View
+                    style={[
+                        styles.boxContainer,
+                        !hasSecondChoice && { justifyContent: "center" },
+                    ]}
+                >
+                    {[vote.first_choice_content, vote.second_choice_content].map(
+                        (_, idx) => {
+                            const isFirst = idx === 0;
+                            const content = isFirst
+                                ? vote.first_choice_content
+                                : vote.second_choice_content;
+                            const wishId = isFirst
+                                ? vote.first_choice_wish_id
+                                : vote.second_choice_wish_id;
+                            const percent = isFirst ? firstPercent : secondPercent;
+                            if (isBuyOrNot && !isFirst) return null;
+                            const info = wishId ? wishInfos[wishId] : null;
+                            return (
+                                <View
+                                    key={idx}
+                                    style={[
+                                        styles.voteBox,
+                                        !hasSecondChoice && { width: 300, height: 200 },
+                                    ]}
+                                >
+                                    {wishId && wishImages[wishId] && (
+                                        <Image
+                                            source={{ uri: wishImages[wishId] }}
+                                            style={{
+                                                width: 150,
+                                                height: 150,
+                                                borderRadius: 10,
+                                                marginBottom: 10,
+                                            }}
+                                        />
+                                    )}
+                                    {info && (
+                                        <>
+                                            <View style={{gap: 5}}>
+                                                <Text
+                                                    style={styles.info}
+                                                    numberOfLines={1}
+                                                    ellipsizeMode="tail"
+                                                >
+                                                    {info.name}
+                                                </Text>
+                                                <Text style={styles.info}>{info.price}원</Text>
+                                            </View>
+                                        </>
+                                    )}
+                                    <Text style={styles.text}>{content}</Text>
+                                </View>
+                            );
+                        }
+                    )}
                 </View>
 
-                {/* 선택 버튼 */}
                 <View style={styles.choiceContainer}>
                     <TouchableOpacity
                         style={styles.choiceBox}
                         onPress={() => !hasVoted && handleChoice("first")}
                     >
                         <Text style={styles.choiceText}>
-                            {hasVoted ? `${firstPercent}% (${results.first}표)` : isBuyOrNot ? "살까?" : "A"}
+                            {hasVoted
+                                ? `${firstPercent}% (${results.first}표)`
+                                : isBuyOrNot
+                                    ? "살까?"
+                                    : "A"}
                         </Text>
                     </TouchableOpacity>
 
@@ -237,7 +348,11 @@ export default function VoteViewer() {
                             onPress={() => !hasVoted && handleChoice("second")}
                         >
                             <Text style={styles.choiceText}>
-                                {hasVoted ? `${secondPercent}% (${results.second}표)` : isBuyOrNot ? "말까?" : "B"}
+                                {hasVoted
+                                    ? `${secondPercent}% (${results.second}표)`
+                                    : isBuyOrNot
+                                        ? "말까?"
+                                        : "B"}
                             </Text>
                         </TouchableOpacity>
                     )}
@@ -262,7 +377,7 @@ export default function VoteViewer() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#9c7866" },
+    container: { flex: 1, backgroundColor: "#9c7866", },
     header: { flexDirection: "row", justifyContent: "space-between", margin: 30 },
     logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold" },
     main: { alignItems: "center", justifyContent: "center", paddingBottom: 80 },
@@ -292,17 +407,22 @@ const styles = StyleSheet.create({
         width: 150,
         height: 250,
     },
-    text: {
+    info: {
         textAlign: "center",
-        fontSize: 18,
+        fontSize: 16,
         color: "#f0f0e5",
+    },
+    text: {
         marginVertical: 10,
+        textAlign: 'center',
+        fontSize: 20,
+        color: '#f0f0e5',
+        fontWeight: 'bold',
     },
     choiceContainer: {
         flexDirection: "row",
         justifyContent: "center",
         gap: 15,
-        marginTop: 20,
     },
     choiceBox: {
         backgroundColor: "rgba(240, 240, 229, 0.2)",

@@ -7,6 +7,7 @@ import {
     StyleSheet,
     FlatList,
     TextInput,
+    Keyboard
 } from "react-native";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -31,11 +32,13 @@ export default function Search() {
             return;
         }
         fetchPosts();
+        Keyboard.dismiss();
     }, [searchText]);
 
     useEffect(() => {
         if (tagQuery) {
             setSearchText(tagQuery);
+            Keyboard.dismiss(); // 키보드 내리기
         }
     }, [tagQuery]);
 
@@ -193,7 +196,13 @@ export default function Search() {
                     <Text style={styles.recommendText}>추천 검색어</Text>
                     <View style={styles.tags}>
                         {recommendedTags.map((tag, index) => (
-                            <TouchableOpacity key={index} onPress={() => setSearchText(tag)}>
+                            <TouchableOpacity
+                                key={index}
+                                onPress={() => {
+                                    Keyboard.dismiss();  // 키보드 내리기
+                                    setSearchText(tag);   // 검색어 설정
+                                }}
+                            >
                                 <Text style={styles.tag}>{tag}</Text>
                             </TouchableOpacity>
                         ))}

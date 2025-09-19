@@ -1,4 +1,14 @@
-import { SafeAreaView, View, Text, TouchableOpacity, TextInput, StyleSheet } from "react-native";
+import {
+    SafeAreaView,
+    View,
+    Text,
+    TouchableOpacity,
+    TextInput,
+    Keyboard,
+    KeyboardAvoidingView,
+    TouchableWithoutFeedback,
+    StyleSheet
+} from "react-native";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -38,38 +48,48 @@ export default function Login() {
     };
 
     return (
-        <SafeAreaView style={styles.background}>
-            <View style={styles.container}>
-                <Text style={styles.text}>welcome to mine</Text>
-                <View style={styles.inputs}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="email"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        onChangeText={setEmail}
-                        value={email}
-                        clearButtonMode="while-editing"
-                    />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="password"
-                        secureTextEntry
-                        autoCapitalize="none"
-                        onChangeText={setPassword}
-                        value={password}
-                        clearButtonMode="while-editing"
-                    />
-                </View>
-                {error ? <Text style={{ color: "rgba(240, 240, 229, 0.5)" }}>{error}</Text> : null}
-                <TouchableOpacity onPress={onLogin}>
-                    <Text style={styles.loginButton}>Login</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => router.push("/signup")}>
-                    <Text style={styles.signupButton}>Sign up</Text>
-                </TouchableOpacity>
-            </View>
-        </SafeAreaView>
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <SafeAreaView style={styles.background}>
+                    <View style={styles.container}>
+                        <Text style={styles.text}>welcome to mine</Text>
+                        <View style={styles.inputs}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="email"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                onChangeText={setEmail}
+                                value={email}
+                                clearButtonMode="while-editing"
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="password"
+                                secureTextEntry
+                                autoCapitalize="none"
+                                onChangeText={setPassword}
+                                value={password}
+                                clearButtonMode="while-editing"
+                            />
+                        </View>
+                        <View style={styles.saveContainer}>
+                            <TouchableOpacity style={styles.save}></TouchableOpacity>
+                            <Text style={styles.saveText}>로그인 정보 저장</Text>
+                        </View>
+                        {error ? <Text style={{ color: "rgba(240, 240, 229, 0.5)" }}>{error}</Text> : null}
+                        <TouchableOpacity onPress={onLogin}>
+                            <Text style={styles.loginButton}>Login</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => router.push("/signup")}>
+                            <Text style={styles.signupButton}>Sign up</Text>
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
+            </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -115,5 +135,19 @@ const styles = StyleSheet.create({
         borderColor: '#f0f0e5',
         textAlign: 'center',
         padding: 15,
-    }
+    },
+    saveContainer: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    save: {
+        width: 15,
+        height: 15,
+        borderColor: '#f0f0e5',
+        borderWidth: 1
+    },
+    saveText: {
+        color: '#f0f0e5',
+        fontSize: 15,
+    },
 })

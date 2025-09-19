@@ -164,13 +164,13 @@ export default function Profilesettings() {
     return (
         <SafeAreaView style={styles.background}>
             <View style={styles.container}>
-                <Text style={styles.text}>profile settings</Text>
+                <Text style={styles.text}>프로필 설정</Text>
                 <TouchableOpacity style={styles.profileImg} onPress={pickImage}>
                     {imageUri ? (
                         <Image source={{ uri: imageUri }} style={styles.profileImg} />
                     ) : (
                         <View style={styles.box}>
-                            <Text style={styles.boxText}>image</Text>
+                            <Text style={styles.boxText}>이미지</Text>
                         </View>
                     )}
                 </TouchableOpacity>
@@ -185,7 +185,7 @@ export default function Profilesettings() {
                     />
                 </View>
                 <View style={styles.frame}>
-                    <Text style={styles.title}>gender</Text>
+                    <Text style={styles.title}>성별</Text>
                     <View style={styles.genders}>
                         {genders.map((gender) => (
                             <TouchableOpacity
@@ -201,7 +201,7 @@ export default function Profilesettings() {
                     </View>
                 </View>
                 <View>
-                    <Text style={styles.title}>birth date</Text>
+                    <Text style={styles.title}>생년월일</Text>
                     <View style={styles.pickerContainer}>
                         <Picker selectedValue={year} style={styles.year} onValueChange={(v) => setYear(v)}>
                             {years.map(y => <Picker.Item key={y} label={`${y}`} value={y} />)}
@@ -215,7 +215,7 @@ export default function Profilesettings() {
                     </View>
                 </View>
                 <TouchableOpacity onPress={onFinish}>
-                    <Text style={styles.button}>finish</Text>
+                    <Text style={styles.button}>완료</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
