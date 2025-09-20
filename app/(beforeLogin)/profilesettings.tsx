@@ -1,6 +1,18 @@
 import { useRouter } from "expo-router";
 import React, { useMemo, useState, useEffect } from "react";
-import { SafeAreaView, View, Text, TouchableOpacity, TextInput, Image, StyleSheet, Alert } from "react-native";
+import {
+    SafeAreaView,
+    View,
+    Text,
+    TouchableOpacity,
+    TextInput,
+    Image,
+    StyleSheet,
+    Keyboard,
+    KeyboardAvoidingView,
+    TouchableWithoutFeedback,
+    Alert
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
 import * as FileSystem from "expo-file-system";
@@ -17,7 +29,7 @@ export default function Profilesettings() {
     const [day, setDay] = useState(1);
     const [isExistingProfile, setIsExistingProfile] = useState(false);
     const router = useRouter();
-    const genders = ["남자", "여자", "공개하지 않음"];
+    const genders = ["남자", "여자"];
 
     const years = useMemo(() => Array.from({ length: 2025 - 1980 + 1 }, (_, i) => 1980 + i), []);
     const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
@@ -97,7 +109,7 @@ export default function Profilesettings() {
         } catch (e) { console.warn("fetch->arrayBuffer failed:", e); }
 
         if (fallbackBase64) {
-            try { return decodeBase64(fallbackBase64); } 
+            try { return decodeBase64(fallbackBase64); }
             catch (e) { console.warn("picker base64 decode failed:", e); }
         }
 
@@ -139,7 +151,6 @@ export default function Profilesettings() {
             }
         }
 
-        // 프로필 업sert
         const { error: upsertError } = await supabase.from("profiles").upsert([{
             id: user.id,
             email: userEmail,
@@ -153,7 +164,6 @@ export default function Profilesettings() {
 
         if (upsertError) return Alert.alert("프로필 저장 실패", upsertError.message);
 
-        // ✅ 이동 처리: 새 가입자 → posts.tsx / 기존 유저 → 이전 화면
         if (!isExistingProfile) {
             router.replace("/postlist");
         } else {
@@ -162,63 +172,69 @@ export default function Profilesettings() {
     };
 
     return (
-        <SafeAreaView style={styles.background}>
-            <View style={styles.container}>
-                <Text style={styles.text}>프로필 설정</Text>
-                <TouchableOpacity style={styles.profileImg} onPress={pickImage}>
-                    {imageUri ? (
-                        <Image source={{ uri: imageUri }} style={styles.profileImg} />
-                    ) : (
-                        <View style={styles.box}>
-                            <Text style={styles.boxText}>이미지</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <SafeAreaView style={styles.background}>
+                    <View style={styles.container}>
+                        <Text style={styles.text}>Profilesettings</Text>
+                        <TouchableOpacity style={styles.profileImg} onPress={pickImage}>
+                            {imageUri ? (
+                                <Image source={{ uri: imageUri }} style={styles.profileImg} />
+                            ) : (
+                                <View style={styles.box}>
+                                    <Text style={styles.boxText}>image</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
 
-                <View style={styles.frame}>
-                    <Text style={styles.title}>name</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="name"
-                        onChangeText={(text) => { if (text.length <= 10) setName(text); }}
-                        value={name}
-                    />
-                </View>
-                <View style={styles.frame}>
-                    <Text style={styles.title}>성별</Text>
-                    <View style={styles.genders}>
-                        {genders.map((gender) => (
-                            <TouchableOpacity
-                                key={gender}
-                                style={[styles.genderButton, selectedGender === gender && styles.selectedBackground]}
-                                onPress={() => setSelectedGender(gender)}
-                            >
-                                <Text style={[styles.genderText, selectedGender === gender && styles.selectedTextColor]}>
-                                    {gender}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                        <View style={styles.frame}>
+                            <Text style={styles.title}>name</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="name"
+                                onChangeText={(text) => { if (text.length <= 10) setName(text); }}
+                                value={name}
+                            />
+                        </View>
+                        <View style={styles.frame}>
+                            <Text style={styles.title}>gender</Text>
+                            <View style={styles.genders}>
+                                {genders.map((gender) => (
+                                    <TouchableOpacity
+                                        key={gender}
+                                        style={[styles.genderButton, selectedGender === gender && styles.selectedBackground]}
+                                        onPress={() => setSelectedGender(gender)}
+                                    >
+                                        <Text style={[styles.genderText, selectedGender === gender && styles.selectedTextColor]}>
+                                            {gender}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                        <View>
+                            <Text style={styles.title}>생년월일</Text>
+                            <View style={styles.pickerContainer}>
+                                <Picker selectedValue={year} style={styles.year} onValueChange={(v) => setYear(v)}>
+                                    {years.map(y => <Picker.Item key={y} label={`${y}`} value={y} />)}
+                                </Picker>
+                                <Picker selectedValue={month} style={styles.month} onValueChange={(v) => setMonth(v)}>
+                                    {months.map(m => <Picker.Item key={m} label={`${m}`} value={m} />)}
+                                </Picker>
+                                <Picker selectedValue={day} style={styles.day} onValueChange={(v) => setDay(v)}>
+                                    {days.map(d => <Picker.Item key={d} label={`${d}`} value={d} />)}
+                                </Picker>
+                            </View>
+                        </View>
+                        <TouchableOpacity onPress={onFinish}>
+                            <Text style={styles.button}>next</Text>
+                        </TouchableOpacity>
                     </View>
-                </View>
-                <View>
-                    <Text style={styles.title}>생년월일</Text>
-                    <View style={styles.pickerContainer}>
-                        <Picker selectedValue={year} style={styles.year} onValueChange={(v) => setYear(v)}>
-                            {years.map(y => <Picker.Item key={y} label={`${y}`} value={y} />)}
-                        </Picker>
-                        <Picker selectedValue={month} style={styles.month} onValueChange={(v) => setMonth(v)}>
-                            {months.map(m => <Picker.Item key={m} label={`${m}`} value={m} />)}
-                        </Picker>
-                        <Picker selectedValue={day} style={styles.day} onValueChange={(v) => setDay(v)}>
-                            {days.map(d => <Picker.Item key={d} label={`${d}`} value={d} />)}
-                        </Picker>
-                    </View>
-                </View>
-                <TouchableOpacity onPress={onFinish}>
-                    <Text style={styles.button}>완료</Text>
-                </TouchableOpacity>
-            </View>
-        </SafeAreaView>
+                </SafeAreaView>
+            </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
     );
 }
 

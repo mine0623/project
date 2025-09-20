@@ -235,10 +235,10 @@ export default function VoteViewer() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
-                    <Text style={styles.logo}>투표</Text>
+                    <Text style={styles.logo}>vote</Text>
                 </View>
 
-                <View style={[styles.main, { flex: 1, justifyContent: "center" }]}>
+                <View style={[styles.main, { flex: 1, justifyContent: "center", gap: 3 }]}>
                     <Text style={styles.text}>모든 투표가 끝났습니다.</Text>
                 </View>
 
@@ -265,6 +265,7 @@ export default function VoteViewer() {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.logo}>vote</Text>
+                <Text>상대방에게 딱 맞는 옷을 골라주세요</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.main}>
@@ -378,7 +379,7 @@ export default function VoteViewer() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#9c7866", },
-    header: { flexDirection: "row", justifyContent: "space-between", margin: 30 },
+    header: { flexDirection: "column", justifyContent: "space-between", margin: 30, gap: 10, },
     logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold" },
     main: { alignItems: "center", justifyContent: "center", paddingBottom: 80 },
     title: {
@@ -413,11 +414,9 @@ const styles = StyleSheet.create({
         color: "#f0f0e5",
     },
     text: {
-        marginVertical: 10,
         textAlign: 'center',
-        fontSize: 20,
+        fontSize: 18,
         color: '#f0f0e5',
-        fontWeight: 'bold',
     },
     choiceContainer: {
         flexDirection: "row",
@@ -454,7 +453,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: "center",
         alignItems: "center",
-        gap: 5,
+        gap: 3
     },
     floatingText: { fontSize: 16, color: "#9c7866" },
 });

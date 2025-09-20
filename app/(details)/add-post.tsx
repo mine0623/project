@@ -1,7 +1,6 @@
 import React, { useState, useEffect, } from "react";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
 import {
     SafeAreaView,
     View,
@@ -191,7 +190,6 @@ export default function AddPost() {
 
             const wishlistIds = selectedWishlist.map((w) => w.id);
 
-            // selectedTags에서 # 제거 후 저장
             const tagsToSave = selectedTags.map(tag => tag.replace(/^#/, ""));
 
             const { error } = await supabase.from("posts").insert([
@@ -215,7 +213,7 @@ export default function AddPost() {
             router.back();
         } catch (err) {
             console.error(err);
-            Alert.alert("에러", "알 수 없는 오류가 발생했습니다.");
+            Alert.alert("에러", "알 수 없는 오류가 발생했습니다. 다시 한 번 시도해 주세요");
         }
     };
 
@@ -280,8 +278,7 @@ export default function AddPost() {
                 />
             </View>
 
-            {/* 태그 영역 */}
-            <View style={{ marginHorizontal: 30, marginBottom: 10 }}>
+            <View style={{ marginHorizontal: 30, }}>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                     {allTags.map(tag => (
                         <TouchableOpacity
@@ -300,7 +297,7 @@ export default function AddPost() {
                     ))}
                 </View>
 
-                <View style={{ flexDirection: "row", marginTop: 8, gap: 10 }}>
+                <View style={{ flexDirection: "row", marginVertical: 15, gap: 5 }}>
                     <TextInput
                         style={styles.newTagInput}
                         placeholder="새 태그 입력"
@@ -315,22 +312,21 @@ export default function AddPost() {
             </View>
 
             <TouchableOpacity onPress={handlePost}>
-                <Text style={styles.button}>완료</Text>
+                <Text style={styles.button}>등록</Text>
             </TouchableOpacity>
 
-            {/* 이미지/위시 선택 모달 */}
             <Modal visible={visible} transparent animationType="fade">
                 <TouchableWithoutFeedback onPress={closeSheet}>
                     <View style={styles.overlay}>
                         <TouchableWithoutFeedback>
                             <View style={styles.popup}>
-                                <Text style={styles.popupText}>선택</Text>
+                                <Text style={styles.popupText}>choose</Text>
                                 <View style={styles.add}>
                                     <TouchableOpacity onPress={pickImage}>
-                                        <Text style={styles.addButton}>이미지</Text>
+                                        <Text style={styles.addButton}>image</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={fetchWishlist}>
-                                        <Text style={styles.addButton}>위시</Text>
+                                        <Text style={styles.addButton}>wish</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -339,12 +335,11 @@ export default function AddPost() {
                 </TouchableWithoutFeedback>
             </Modal>
 
-            {/* 위시리스트 모달 */}
             <Modal visible={wishModalVisible} transparent animationType="slide">
                 <TouchableWithoutFeedback onPress={() => setWishModalVisible(false)}>
                     <View style={styles.overlay}>
                         <TouchableWithoutFeedback>
-                            <View style={[styles.popup, { maxHeight: "70%" }]}>
+                            <View style={[styles.modal, { maxHeight: "70%" }]}>
                                 <Text style={styles.popupText}>wishlist</Text>
                                 <FlatList
                                     data={wishlist}
@@ -383,10 +378,10 @@ const styles = StyleSheet.create({
         marginHorizontal: 25,
         marginBottom: 15,
     },
-    main: { marginVertical: 20, marginHorizontal: 30 },
+    main: { marginTop: 20, marginHorizontal: 30 },
     titleInput: {
         borderColor: 'rgba(240, 240, 229, 0.5)',
-        borderWidth: 1,
+        borderWidth: 0.5,
         borderRadius: 20,
         fontSize: 18,
         paddingHorizontal: 15,
@@ -394,12 +389,12 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     contentInput: {
-        borderColor: "rgba(240, 240, 229, 0.5)",
-        borderWidth: 1,
-        marginTop: 20,
+        backgroundColor: 'rgba(240, 240, 229, 0.1)',
+        marginVertical: 10,
         borderRadius: 10,
         height: 80,
-        padding: 10,
+        paddingVertical: 15,
+        padding: 12,
         fontSize: 15,
         color: "#f0f0e5",
     },
@@ -410,8 +405,6 @@ const styles = StyleSheet.create({
     },
     box: {
         borderRadius: 15,
-        borderWidth: 1,
-        borderColor: "rgba(240,240,229,0.3)",
         width: 150,
         height: 150,
         justifyContent: "center",
@@ -439,14 +432,14 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         paddingHorizontal: 12,
         color: "#f0f0e5",
-        height: 40,
+        height: 35,
     },
     addTagButton: {
         paddingHorizontal: 10,
         borderRadius: 20,
         fontWeight: 'bold',
-        color: '#9c7866',
-        backgroundColor: "#f0f0e5",
+        color: '#f0f0e5',
+        backgroundColor: "#b7aa93",
         justifyContent: "center",
     },
     overlay: {
@@ -459,6 +452,13 @@ const styles = StyleSheet.create({
         width: "85%",
         maxHeight: "80%",
         backgroundColor: "#f0f0e5",
+        borderRadius: 15,
+        padding: 20,
+    },
+    modal: {
+        width: "85%",
+        maxHeight: "80%",
+        backgroundColor: "#b7aa93",
         borderRadius: 15,
         padding: 20,
     },

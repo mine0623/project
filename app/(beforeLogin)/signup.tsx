@@ -1,7 +1,17 @@
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { 
+    SafeAreaView, 
+    View, 
+    Text, 
+    TextInput, 
+    TouchableOpacity, 
+    StyleSheet,
+    Keyboard,
+    KeyboardAvoidingView,
+    TouchableWithoutFeedback
+} from "react-native";
 
 export default function Signup() {
     const [email, setEmail] = useState("");
@@ -56,46 +66,52 @@ export default function Signup() {
 
 
     return (
-        <SafeAreaView style={styles.background}>
-            <View style={styles.container}>
-                <Text style={styles.text}>회원가입</Text>
-                <View style={styles.tool}>
-                    <Text style={styles.inputText}>이메일</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="이메일"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        onChangeText={(text) => setEmail(text)}
-                        value={email}
-                        clearButtonMode="while-editing"
-                    />
-                </View>
-                <View style={styles.tool}>
-                    <Text style={styles.inputText}>비밀번호</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="비밀번호"
-                        secureTextEntry
-                        onChangeText={(text) => setPassword(text)}
-                        value={password}
-                        clearButtonMode="while-editing"
-                    />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="다시 입력해 주세요."
-                        secureTextEntry
-                        onChangeText={(text) => setPasswordConfirm(text)}
-                        value={passwordConfirm}
-                        clearButtonMode="while-editing"
-                    />
-                    {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                </View>
-                <TouchableOpacity onPress={onSignUpPress}>
-                    <Text style={styles.button}>회원가입</Text>
-                </TouchableOpacity>
-            </View>
-        </SafeAreaView>
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <SafeAreaView style={styles.background}>
+                    <View style={styles.container}>
+                        <Text style={styles.text}>Sign up</Text>
+                        <View style={styles.tool}>
+                            <Text style={styles.inputText}>email</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="email"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                onChangeText={(text) => setEmail(text)}
+                                value={email}
+                                clearButtonMode="while-editing"
+                            />
+                        </View>
+                        <View style={styles.tool}>
+                            <Text style={styles.inputText}>password</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="password"
+                                secureTextEntry
+                                onChangeText={(text) => setPassword(text)}
+                                value={password}
+                                clearButtonMode="while-editing"
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Please enter again"
+                                secureTextEntry
+                                onChangeText={(text) => setPasswordConfirm(text)}
+                                value={passwordConfirm}
+                                clearButtonMode="while-editing"
+                            />
+                            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                        </View>
+                        <TouchableOpacity onPress={onSignUpPress}>
+                            <Text style={styles.button}>sign up</Text>
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
+            </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -107,7 +123,7 @@ const styles = StyleSheet.create({
     container: {
         marginHorizontal: 30,
         marginTop: 50,
-        gap: 20,
+        gap: 30,
     },
     text: {
         color: '#f0f0e5',

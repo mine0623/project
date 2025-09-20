@@ -143,10 +143,10 @@ export default function WishList() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.logo}>위시리시트</Text>
+        <Text style={styles.logo}>wishlist</Text>
         <TouchableOpacity style={styles.addbutton} onPress={openSheet}>
           <Text style={styles.addtext}>add</Text>
-          <Ionicons name="add" size={15} color="#b7aa93" />
+          <Ionicons name="add" size={15} color="#9c7866" />
         </TouchableOpacity>
       </View>
       <Modal visible={visible} transparent animationType="fade">
@@ -197,9 +197,9 @@ export default function WishList() {
               <Text>{item.store}</Text>
               <Text>{item.brand}</Text>
               <Text
-                numberOfLines={1}        // 한 줄로 제한
-                ellipsizeMode="tail"     // 넘칠 경우 끝에 '...' 표시
-                style={{ maxWidth: 200 }} // 필요하면 최대 너비 지정
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={{ maxWidth: 200 }}
               >
                 {item.name}
               </Text>
@@ -230,15 +230,13 @@ const styles = StyleSheet.create({
   addbutton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
     backgroundColor: '#f0f0e5',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
   },
   addtext: {
-    color: '#b7aa93',
-    fontWeight: 'bold',
+    color: '#9c7866',
     fontSize: 15,
   },
   overlay: {

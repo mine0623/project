@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   commentItem: { flexDirection: "row", justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 10 },
   commentName: { fontWeight: "bold", color: "#f0f0e5", fontSize: 16 },
   commentText: { color: "#f0f0e5", fontSize: 15 },
-  commentInputContainer: { backgroundColor: '#b7aa93',flexDirection: "row", alignItems: "center", paddingVertical: 20, paddingHorizontal: 25, },
+  commentInputContainer: { borderRadius: 30, marginHorizontal: 20, marginVertical: 10, backgroundColor: '#b7aa93',flexDirection: "row", alignItems: "center", paddingVertical: 20, paddingHorizontal: 25, },
   heart: { flexDirection: 'column', alignItems: 'center' },
   count: { color: '#f0f0e5' },
   time: { color: "rgba(240, 240, 229, 0.5)" },

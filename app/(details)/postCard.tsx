@@ -17,8 +17,7 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
   const [wishImages, setWishImages] = useState<string[]>([]);
   const profile = post.profiles;
   const router = useRouter();
-
-  // wishlist 이미지 가져오기
+  
   useEffect(() => {
     const fetchWishImages = async () => {
       if (!Array.isArray(post.wishlist_ids) || post.wishlist_ids.length === 0) return;

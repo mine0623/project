@@ -21,12 +21,28 @@ export default function Login() {
 
     const onLogin = async () => {
         setError("");
+
+        // 1. 이메일 형식 체크
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError("올바른 이메일 형식이 아닙니다.");
+            return;
+        }
+
+        // 2. 로그인 시도
         const { data, error } = await supabase.auth.signInWithPassword({
-            email, password,
+            email,
+            password,
         });
 
+        // 3. 로그인 에러 처리
         if (error) {
-            setError(error.message);
+            // Supabase에서 인증 실패 시 status가 400인 경우 아이디/비밀번호 불일치로 간주
+            if (error.status === 400) {
+                setError("아이디나 비밀번호가 일치하지 않습니다.");
+            } else {
+                setError("로그인 중 오류가 발생했습니다.");
+            }
             return;
         }
 
@@ -44,8 +60,8 @@ export default function Login() {
         } else {
             router.replace("/postlist");
         }
-
     };
+
 
     return (
         <KeyboardAvoidingView
@@ -74,10 +90,6 @@ export default function Login() {
                                 value={password}
                                 clearButtonMode="while-editing"
                             />
-                        </View>
-                        <View style={styles.saveContainer}>
-                            <TouchableOpacity style={styles.save}></TouchableOpacity>
-                            <Text style={styles.saveText}>로그인 정보 저장</Text>
                         </View>
                         {error ? <Text style={{ color: "rgba(240, 240, 229, 0.5)" }}>{error}</Text> : null}
                         <TouchableOpacity onPress={onLogin}>
@@ -135,19 +147,5 @@ const styles = StyleSheet.create({
         borderColor: '#f0f0e5',
         textAlign: 'center',
         padding: 15,
-    },
-    saveContainer: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    save: {
-        width: 15,
-        height: 15,
-        borderColor: '#f0f0e5',
-        borderWidth: 1
-    },
-    saveText: {
-        color: '#f0f0e5',
-        fontSize: 15,
     },
 })

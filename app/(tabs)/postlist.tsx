@@ -13,7 +13,7 @@ export default function PostList() {
   const [sortOption, setSortOption] = useState<"latest" | "popular">("latest");
   const router = useRouter();
 
-  const tabs: string[] = ["전체", "이번 주 인기🔥", "이번 달 인기🔥"];
+  const tabs: string[] = ["전체", "이번 주 인기", "이번 달 인기"];
 
   useFocusEffect(
     React.useCallback(() => {
@@ -70,20 +70,20 @@ export default function PostList() {
     const now = new Date();
 
     // 날짜 필터
-    if (selectedTab === "이번 주 인기🔥") {
+    if (selectedTab === "이번 주 인기") {
       const startOfWeek = new Date(now);
       const day = now.getDay();
       const diff = day === 0 ? 6 : day - 1;
       startOfWeek.setDate(now.getDate() - diff);
       startOfWeek.setHours(0, 0, 0, 0);
       formatted = formatted.filter(post => new Date(post.created_at) >= startOfWeek);
-    } else if (selectedTab === "이번 달 인기🔥") {
+    } else if (selectedTab === "이번 달 인기") {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       formatted = formatted.filter(post => new Date(post.created_at) >= startOfMonth);
     }
 
     // 정렬
-    if (selectedTab === "이번 주 인기🔥" || selectedTab === "이번 달 인기🔥") {
+    if (selectedTab === "이번 주 인기" || selectedTab === "이번 달 인기") {
       // 인기순: 하트 + 댓글 수
       formatted.sort((a, b) => (b.hearts.length + b.comments.length) - (a.hearts.length + a.comments.length));
     } else {
@@ -109,7 +109,7 @@ export default function PostList() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.logo}>게시물</Text>
+        <Text style={styles.logo}>mine</Text>
         <TouchableOpacity onPress={() => router.push("/search")}>
           <Ionicons name="search" size={25} color="#f0f0e5" />
         </TouchableOpacity>
@@ -165,7 +165,7 @@ export default function PostList() {
         style={styles.floatingTextButton}
         onPress={() => router.push("/add-post")}
       >
-        <Text style={styles.floatingText}>게시물</Text>
+        <Text style={styles.floatingText}>글쓰기</Text>
         <Ionicons name="pencil" size={15} color="#9c7866" />
       </TouchableOpacity>
     </SafeAreaView>
@@ -181,11 +181,11 @@ const styles = StyleSheet.create({
   tabButtonSelected: { backgroundColor: "#f0f0e5" },
   tabText: { color: '#f0f0e5' },
   tabTextSelected: { color: "#9c7866", fontWeight: 'bold' },
-  sortContainer: { justifyContent: 'flex-end', flexDirection: "row", marginHorizontal: 20, marginVertical: 10, gap: 8, paddingVertical: 10 },
+  sortContainer: { justifyContent: 'flex-end', flexDirection: "row", marginHorizontal: 30, marginVertical: 10, gap: 8, paddingVertical: 10 },
   sortButton: {},
   sortSelected: {},
-  sortText: { color: "rgba(240, 240, 229, 0.8)", },
-  sortTextSelected: { color: '#f0f0e5', fontWeight: 'bold' },
+  sortText: { color: "rgba(240, 240, 229, 0.5)", },
+  sortTextSelected: { color: '#f0f0e5' },
   floatingTextButton: {
     flexDirection: 'row',
     position: "absolute",

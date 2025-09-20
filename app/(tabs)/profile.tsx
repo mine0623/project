@@ -70,7 +70,6 @@ export default function Profile() {
         loadUserAndProfile();
     }, []);
 
-    /** 게시물 불러오기 */
     useEffect(() => {
         if (!currentUser) return;
 
@@ -102,14 +101,12 @@ export default function Profile() {
         fetchPosts();
     }, [currentUser]);
 
-    /** 투표 + 결과 + 이미지 불러오기 */
     useEffect(() => {
         if (!currentUser) return;
 
         const fetchMyVotesWithImages = async () => {
             setLoadingVotes(true);
 
-            // 1. 내 투표 가져오기
             const { data: votesData, error: votesError } = await supabase
                 .from("votes")
                 .select("*")
@@ -123,7 +120,6 @@ export default function Profile() {
                 return;
             }
 
-            // 2. 응답 집계
             const votesWithResults = await Promise.all(
                 votesData.map(async (vote: any) => {
                     const { data: resultsData, error } = await supabase
@@ -153,7 +149,6 @@ export default function Profile() {
                 })
             );
 
-            // 3. wishlist 이미지 가져오기
             const wishIds = votesWithResults.flatMap((v) =>
                 [v.first_choice_wish_id, v.second_choice_wish_id].filter(Boolean)
             );
@@ -170,7 +165,6 @@ export default function Profile() {
                 }
             }
 
-            // 4. 최종 데이터에 이미지 붙이기
             const finalVotes = votesWithResults.map((v) => ({
                 ...v,
                 first_choice_image: wishMap[v.first_choice_wish_id] || null,
@@ -195,12 +189,11 @@ export default function Profile() {
 
     const confirmLogout = () => {
         Alert.alert("로그아웃", "로그아웃하시겠습니까?", [
-            { text: "취소", style: "cancel" },
-            { text: "확인", onPress: handleLogout }
+            { text: "취소", style: "cancel", },
+            { text: "확인", style: "destructive", onPress: handleLogout }
         ]);
     };
 
-    /** 게시물 카드 */
     const handlePostPress = (post: any) => {
         router.push({
             pathname: "/postDetail",
@@ -214,7 +207,6 @@ export default function Profile() {
         </TouchableOpacity>
     );
 
-    /** 게시물 리스트 */
     const PostView = () => (
         <View style={styles.scene}>
             <FlatList
@@ -222,11 +214,16 @@ export default function Profile() {
                 renderItem={renderPost}
                 keyExtractor={(item) => item.id.toString()}
                 showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                    <View style={styles.loadingContainer}>
+                        <Text style={styles.loadingText}>아직 올린 게시물이 없습니다.</Text>
+                    </View>
+                }
+                contentContainerStyle={posts.length === 0 ? { flex: 1 } : undefined}
             />
         </View>
     );
 
-    /** 투표 삭제 */
     const handleDeleteVote = async (voteId: string) => {
         Alert.alert("투표 종료", "정말 종료하시겠습니까?", [
             { text: "취소", style: "cancel" },
@@ -342,7 +339,7 @@ export default function Profile() {
         if (loadingVotes) {
             return (
                 <View style={styles.loadingContainer}>
-                    <Text style={styles.loadingText}>Loading...</Text>
+                    <Text style={styles.loadingText}>정보 불러오는 중</Text>
                 </View>
             );
         }
@@ -367,11 +364,10 @@ export default function Profile() {
         );
     };
 
-    /** 메인 UI */
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
-                <Text style={styles.error}>Loading...</Text>
+                <Text style={styles.error}>정보 불러오는 중</Text>
             </SafeAreaView>
         );
     }
@@ -387,7 +383,7 @@ export default function Profile() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.logo}>프로필</Text>
+                <Text style={styles.logo}>profile</Text>
                 <TouchableOpacity onPress={confirmLogout} style={styles.logoutButton}>
                     <Text style={styles.logout}>로그아웃</Text>
                 </TouchableOpacity>
@@ -443,16 +439,16 @@ const styles = StyleSheet.create({
     content: { flex: 1 },
     scene: { flex: 1 },
     logout: {
-        color: '#f0f0e5',
+        color: '#9c7866',
         fontWeight: 'bold',
-        backgroundColor: 'rgba(240, 240, 229, 0.2)',
+        backgroundColor: '#f0f0e5',
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 20,
     },
     underline: { borderBottomWidth: 1, borderColor: "#f0f0e580", marginTop: 10 },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-    loadingText: { color: "#f0f0e5" },
+    loadingText: { color: "#f0f0e5", },
     voteCard: {
         borderRadius: 8,
         padding: 15,
