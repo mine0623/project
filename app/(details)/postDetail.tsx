@@ -36,7 +36,6 @@ export default function PostDetail() {
     if (!error) setCurrentUser(data.user);
   };
 
-  // 댓글 + 좋아요 fetch
   const fetchComments = async () => {
     if (!currentPost) return;
     const { data, error } = await supabase

@@ -100,7 +100,6 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
   return (
     <View>
       <View style={styles.post}>
-        {/* Header */}
         <View style={styles.postHeader}>
           <View style={styles.profile}>
             {profile?.avatar_url ? (
@@ -149,7 +148,6 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           ))}
         </View>
 
-        {/* 좋아요 / 댓글 */}
         <View style={styles.icons}>
           <View style={styles.icon}>
             <TouchableOpacity onPress={toggleHeart}>

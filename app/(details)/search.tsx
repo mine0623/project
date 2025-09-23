@@ -51,10 +51,8 @@ export default function Search() {
         const { data, error } = await supabase.from("posts").select("tags");
         if (error) return console.error("Error fetching tags:", error);
 
-        // 모든 태그 모으기
         const allTags = (data ?? []).map((post: any) => post.tags ?? []).flat();
 
-        // 태그 사용 빈도 계산
         const tagCount: Record<string, number> = {};
         allTags.forEach((tag: string) => {
             if (tag) {
@@ -62,11 +60,10 @@ export default function Search() {
             }
         });
 
-        // [태그, 사용횟수] 배열 → 사용횟수 기준으로 정렬
         const sortedTags = Object.entries(tagCount)
-            .sort((a, b) => b[1] - a[1]) // 사용횟수 내림차순
-            .map(([tag]) => tag)         // 태그만 추출
-            .slice(0, 10);               // 상위 10개
+            .sort((a, b) => b[1] - a[1])
+            .map(([tag]) => tag)
+            .slice(0, 10);
 
         setRecommendedTags(sortedTags);
     };

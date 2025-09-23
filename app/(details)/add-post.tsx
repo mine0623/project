@@ -312,7 +312,7 @@ export default function AddPost() {
             </View>
 
             <TouchableOpacity onPress={handlePost}>
-                <Text style={styles.button}>등록</Text>
+                <Text style={styles.button}>완료</Text>
             </TouchableOpacity>
 
             <Modal visible={visible} transparent animationType="fade">

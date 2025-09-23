@@ -69,7 +69,6 @@ export default function PostList() {
 
     const now = new Date();
 
-    // 날짜 필터
     if (selectedTab === "이번 주 인기") {
       const startOfWeek = new Date(now);
       const day = now.getDay();

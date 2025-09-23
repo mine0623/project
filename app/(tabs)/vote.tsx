@@ -265,7 +265,6 @@ export default function VoteViewer() {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.logo}>vote</Text>
-                <Text>상대방에게 딱 맞는 옷을 골라주세요</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.main}>
