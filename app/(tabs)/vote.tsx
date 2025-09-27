@@ -190,6 +190,26 @@ export default function VoteViewer() {
         return secondEmpty ? "살까? 말까?" : "둘 중 골라줘";
     };
 
+    const handleResetVote = async () => {
+        const vote = votes[currentIndex];
+        if (!vote || !userId) return;
+
+        try {
+            const { error } = await supabase
+                .from("vote_responses")
+                .delete()
+                .eq("vote_id", vote.id)
+                .eq("user_id", userId);
+
+            if (error) throw error;
+
+            setHasVoted(false);
+            setResults({ first: 0, second: 0 });
+        } catch (err: any) {
+            Alert.alert("Error", err.message);
+        }
+    };
+
     const handleNext = () => {
         if (currentIndex < votes.length - 1) {
             setCurrentIndex(currentIndex + 1);
@@ -309,7 +329,7 @@ export default function VoteViewer() {
                                     )}
                                     {info && (
                                         <>
-                                            <View style={{gap: 5}}>
+                                            <View style={{ gap: 5 }}>
                                                 <Text
                                                     style={styles.info}
                                                     numberOfLines={1}
@@ -359,9 +379,14 @@ export default function VoteViewer() {
                 </View>
 
                 {hasVoted && (
-                    <TouchableOpacity style={styles.button} onPress={handleNext}>
-                        <Text style={styles.buttonText}>Next Vote</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: "row", gap: 10, marginTop: 20 }}>
+                        <TouchableOpacity style={styles.button} onPress={handleResetVote}>
+                            <Text style={styles.buttonText}>다시 투표하기</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.button} onPress={handleNext}>
+                            <Text style={styles.buttonText}>다음 투표</Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
             </ScrollView>
 

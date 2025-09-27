@@ -13,7 +13,7 @@ export default function PostList() {
   const [sortOption, setSortOption] = useState<"latest" | "popular">("latest");
   const router = useRouter();
 
-  const tabs: string[] = ["전체", "이번 주 인기", "이번 달 인기"];
+  const tabs: string[] = ["전체", "10대", "20대", "이번 주 인기"];
 
   useFocusEffect(
     React.useCallback(() => {
@@ -69,24 +69,31 @@ export default function PostList() {
 
     const now = new Date();
 
-    if (selectedTab === "이번 주 인기") {
+    if (selectedTab === "10대") {
+      formatted = formatted.filter(post => {
+        if (!post.profiles?.birth_year) return false;
+        const age = now.getFullYear() - post.profiles.birth_year + 1;
+        return age >= 10 && age < 20;
+      });
+    } else if (selectedTab === "20대") {
+      formatted = formatted.filter(post => {
+        if (!post.profiles?.birth_year) return false;
+        const age = now.getFullYear() - post.profiles.birth_year + 1;
+        return age >= 20 && age < 30;
+      });
+    } else if (selectedTab === "이번 주 인기") {
       const startOfWeek = new Date(now);
       const day = now.getDay();
       const diff = day === 0 ? 6 : day - 1;
       startOfWeek.setDate(now.getDate() - diff);
       startOfWeek.setHours(0, 0, 0, 0);
+
       formatted = formatted.filter(post => new Date(post.created_at) >= startOfWeek);
-    } else if (selectedTab === "이번 달 인기") {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      formatted = formatted.filter(post => new Date(post.created_at) >= startOfMonth);
     }
 
-    // 정렬
-    if (selectedTab === "이번 주 인기" || selectedTab === "이번 달 인기") {
-      // 인기순: 하트 + 댓글 수
+    if (selectedTab === "이번 주 인기") {
       formatted.sort((a, b) => (b.hearts.length + b.comments.length) - (a.hearts.length + a.comments.length));
     } else {
-      // 전체 탭
       if (sortOption === "popular") {
         formatted.sort((a, b) => (b.hearts.length + b.comments.length) - (a.hearts.length + a.comments.length));
       } else {
@@ -96,8 +103,6 @@ export default function PostList() {
 
     setPosts(formatted);
   };
-
-
   const handlePostPress = (post: any) => {
     router.push({
       pathname: "/postDetail",
@@ -128,7 +133,7 @@ export default function PostList() {
         ))}
       </View>
 
-      {selectedTab === "전체" && (
+      {(selectedTab === "전체" || selectedTab === "10대" || selectedTab === "20대") && (
         <View style={styles.sortContainer}>
           <TouchableOpacity
             style={[styles.sortButton, sortOption === "latest" && styles.sortSelected]}

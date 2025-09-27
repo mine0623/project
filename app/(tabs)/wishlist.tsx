@@ -27,6 +27,7 @@ type ProductType = {
   name: string;
   price: string | number;
   image?: string | null;
+  category?: string;
 };
 
 export default function WishList() {
@@ -35,6 +36,7 @@ export default function WishList() {
   const [link, setLink] = useState('');
   const [product, setProduct] = useState<ProductType | null>(null);
   const [wishlist, setWishlist] = useState<ProductType[]>([]);
+  const [selectedTab, setSelectedTab] = useState("전체");
   const slideAnim = useRef(new Animated.Value(MAX_HEIGHT)).current;
 
   const openSheet = () => {
@@ -59,7 +61,7 @@ export default function WishList() {
     if (!link.trim()) return null;
 
     try {
-      const res = await fetch('http:/172.30.14.30:3000/parse-link', {
+      const res = await fetch('http://172.30.14.30:3000/parse-link', {  // ← URL 수정 필요
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: link }),
@@ -84,15 +86,30 @@ export default function WishList() {
   };
 
   const handleAdd = async () => {
-    const newProduct = await fetchProductInfo();
-
-    if (!newProduct) {
-      alert('상품 정보를 불러오지 못했습니다. URL을 확인해 주세요.');
+    // URL이 없으면 return
+    if (!link.trim()) {
+      alert("URL을 입력해주세요.");
       return;
     }
 
-    await handleAddToSupabase({ ...newProduct, url: link });
+    // 크롤링해서 상품 정보 가져오기
+    const newProduct = await fetchProductInfo();
+
+    if (!newProduct) {
+      alert("상품 정보를 가져오지 못했습니다. URL을 확인해주세요.");
+      return;
+    }
+
+    // 카테고리 선택 여부 체크
+    if (!product?.category) {
+      alert("카테고리를 선택해주세요.");
+      return;
+    }
+
+    // Supabase에 저장
+    await handleAddToSupabase({ ...newProduct, url: link, category: product.category });
   };
+
 
   const handleAddToSupabase = async (productToAdd: ProductType & { url?: string }) => {
     if (!productToAdd) return;
@@ -104,11 +121,11 @@ export default function WishList() {
     }
 
     const userId = sessionData.session.user.id;
-    const { store, brand, name, price, image, url } = productToAdd;
+    const { store, brand, name, price, image, url, category } = productToAdd;
 
     const { data: insertedData, error } = await supabase
       .from('wishlist')
-      .insert([{ store, brand, name, price, image, url, user_id: userId }])
+      .insert([{ store, brand, name, price, image, url, category, user_id: userId }])
       .select();
 
     if (!error && insertedData) {
@@ -139,9 +156,13 @@ export default function WishList() {
     fetchWishlist();
   }, []);
 
+  const filteredWishlist = wishlist.filter(item =>
+    selectedTab === "전체" ? true : item.category === selectedTab
+  );
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>wishlist</Text>
         <TouchableOpacity style={styles.addbutton} onPress={openSheet}>
@@ -149,6 +170,23 @@ export default function WishList() {
           <Ionicons name="add" size={15} color="#9c7866" />
         </TouchableOpacity>
       </View>
+
+      {/* Tabs */}
+      <View style={styles.tabContainer}>
+        {["전체", "상의", "하의", "신발", "악세사리"].map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            onPress={() => setSelectedTab(tab)}
+            style={[styles.tab, selectedTab === tab && styles.activeTab]}
+          >
+            <Text style={selectedTab === tab ? styles.activeTabText : styles.tabText}>
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Modal */}
       <Modal visible={visible} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={closeSheet}>
           <View style={styles.overlay}>
@@ -156,6 +194,7 @@ export default function WishList() {
               <View style={styles.popup}>
                 <Text style={styles.popupText}>wish</Text>
 
+                {/* URL 입력 */}
                 <View style={styles.formGroup}>
                   <Text style={styles.label}>URL</Text>
                   <TextInput
@@ -166,6 +205,31 @@ export default function WishList() {
                   />
                 </View>
 
+                {/* 카테고리 선택 */}
+                <Text style={styles.label}>카테고리</Text>
+                <View style={styles.categoryRow}>
+                  {["상의", "하의", "신발", "악세사리"].map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[
+                        styles.categoryButton,
+                        product?.category === cat && styles.categoryButtonSelected
+                      ]}
+                      onPress={() =>
+                        setProduct(prev => prev ? { ...prev, category: cat } : { store: "", name: "", price: "", category: cat })
+                      }
+                    >
+                      <Text style={[
+                        styles.categoryText,
+                        product?.category === cat && styles.categoryTextSelected
+                      ]}>
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* 추가 버튼 */}
                 <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
                   <Text style={styles.addText}>add</Text>
                 </TouchableOpacity>
@@ -175,9 +239,9 @@ export default function WishList() {
         </TouchableWithoutFeedback>
       </Modal>
 
-
+      {/* 위시리스트 목록 */}
       <FlatList
-        data={wishlist}
+        data={filteredWishlist}
         keyExtractor={(item) => item.id?.toString() ?? Math.random().toString()}
         contentContainerStyle={{ padding: 20 }}
         renderItem={({ item }) => (
@@ -204,6 +268,9 @@ export default function WishList() {
                 {item.name}
               </Text>
               <Text>{item.price}원</Text>
+              <Text>
+                #{item.category}
+              </Text>
             </View>
           </TouchableOpacity>
         )}
@@ -221,6 +288,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     margin: 30,
+    marginBottom: 10,
   },
   logo: {
     color: "#f0f0e5",
@@ -270,8 +338,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#f0f0e5'
   },
+  categoryRow: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginBottom: 10,},
+  categoryButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, },
+  categoryButtonSelected: { backgroundColor: "#b7aa93", borderWidth: 0, },
+  categoryText: {  },
+  categoryTextSelected: { color: '#f0f0e5' },
   addButton: {
-    backgroundColor: '#b7aa93',
+    backgroundColor: '#9c7866',
     paddingVertical: 12,
     borderRadius: 10,
   },
@@ -297,4 +370,9 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 10
   },
-})
+  tabContainer: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginHorizontal: 20, marginTop: 10 },
+  tab: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: '#f0f0e5' },
+  activeTab: { backgroundColor: "#f0f0e5" },
+  tabText: { color: '#f0f0e5' },
+  activeTabText: { color: "#9c7866", fontWeight: 'bold' }
+});
