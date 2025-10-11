@@ -229,7 +229,7 @@ export default function Profilesettings() {
                             </View>
                         </View>
                         <TouchableOpacity onPress={onFinish}>
-                            <Text style={styles.button}>next</Text>
+                            <Text style={styles.button}>완료</Text>
                         </TouchableOpacity>
                     </View>
                 </SafeAreaView>

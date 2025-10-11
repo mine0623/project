@@ -22,22 +22,18 @@ export default function Login() {
     const onLogin = async () => {
         setError("");
 
-        // 1. 이메일 형식 체크
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             setError("올바른 이메일 형식이 아닙니다.");
             return;
         }
 
-        // 2. 로그인 시도
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
         });
 
-        // 3. 로그인 에러 처리
         if (error) {
-            // Supabase에서 인증 실패 시 status가 400인 경우 아이디/비밀번호 불일치로 간주
             if (error.status === 400) {
                 setError("아이디나 비밀번호가 일치하지 않습니다.");
             } else {

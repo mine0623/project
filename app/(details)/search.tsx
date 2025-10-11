@@ -60,13 +60,15 @@ export default function Search() {
             }
         });
 
+        // ✅ 상위 5개만 선택하도록 변경
         const sortedTags = Object.entries(tagCount)
             .sort((a, b) => b[1] - a[1])
             .map(([tag]) => tag)
-            .slice(0, 10);
+            .slice(0, 5);
 
         setRecommendedTags(sortedTags);
     };
+
 
 
     const fetchPosts = async () => {
@@ -183,7 +185,7 @@ export default function Search() {
                     placeholderTextColor="#f0f0e5"
                     value={searchText}
                     onChangeText={setSearchText}
-                    autoFocus
+                    autoFocus={!tagQuery}
                 />
                 <Ionicons name="search" size={20} color="#f0f0e5" />
             </View>

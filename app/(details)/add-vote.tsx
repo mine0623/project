@@ -31,17 +31,27 @@ export default function AddVote() {
 
   const fetchWishlist = async () => {
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        Alert.alert("로그인 필요", "로그인이 필요합니다.");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("wishlist")
         .select("*")
+        .eq("user_id", user.id) // ✅ 현재 로그인한 사용자만
         .order("created_at", { ascending: false });
+
       if (error) throw error;
+
       setWishlist(data || []);
       setWishModalVisible(true);
     } catch (err) {
       console.error(err);
     }
   };
+
 
   const toggleWishlist = (item: any) => {
     const boxIndex = currentIndex;

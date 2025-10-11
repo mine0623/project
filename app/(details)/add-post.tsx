@@ -61,7 +61,7 @@ export default function AddPost() {
         const sortedTags = Object.entries(tagCount)
             .sort((a, b) => b[1] - a[1])
             .map(([tag]) => `#${tag}`)
-            .slice(0, 5);
+            .slice(0, 2);
 
         setRecommendedTags(sortedTags);
 
@@ -106,10 +106,22 @@ export default function AddPost() {
 
     const fetchWishlist = async () => {
         try {
+            // ① 현재 로그인한 사용자 정보 가져오기
+            const { data: userData, error: userError } = await supabase.auth.getUser();
+            if (userError || !userData?.user) {
+                console.error("로그인 정보를 가져올 수 없습니다:", userError);
+                return;
+            }
+
+            const userId = userData.user.id;
+
+            // ② 자신의 user_id에 해당하는 위시만 가져오기
             const { data, error } = await supabase
                 .from("wishlist")
                 .select("*")
+                .eq("user_id", userId) // ✅ 이 한 줄 추가
                 .order("created_at", { ascending: false });
+
             if (error) throw error;
             setWishlist(data || []);
             setVisible(false);
@@ -118,6 +130,7 @@ export default function AddPost() {
             console.error(err);
         }
     };
+
 
     const toggleWishlist = (item: any) => {
         const totalSelected = images.length + selectedWishlist.length;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   SafeAreaView,
   View,
@@ -13,6 +13,7 @@ import {
   FlatList,
   StyleSheet
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
@@ -39,6 +40,12 @@ export default function WishList() {
   const [selectedTab, setSelectedTab] = useState("전체");
   const slideAnim = useRef(new Animated.Value(MAX_HEIGHT)).current;
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchWishlist();
+    }, [])
+  );
+
   const openSheet = () => {
     setVisible(true);
     slideAnim.setValue(MAX_HEIGHT);
@@ -61,7 +68,7 @@ export default function WishList() {
     if (!link.trim()) return null;
 
     try {
-      const res = await fetch('http://172.30.14.30:3000/parse-link', {  // ← URL 수정 필요
+      const res = await fetch('http://172.30.1.61:3000/parse-link', {  // ← URL 수정 필요
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: link }),
@@ -160,6 +167,19 @@ export default function WishList() {
     selectedTab === "전체" ? true : item.category === selectedTab
   );
 
+  // 고정된 카테고리 순서
+  const fixedOrder = ["상의", "하의", "신발", "악세사리"];
+
+  // wishlist에 실제로 존재하는 카테고리만 필터링
+  const existingCategories = fixedOrder.filter(cat =>
+    wishlist.some(item => item.category === cat)
+  );
+
+  // 최종 탭 목록
+  const tabs = ["전체", ...existingCategories];
+
+
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -171,9 +191,8 @@ export default function WishList() {
         </TouchableOpacity>
       </View>
 
-      {/* Tabs */}
       <View style={styles.tabContainer}>
-        {["전체", "상의", "하의", "신발", "악세사리"].map((tab) => (
+        {tabs.map((tab) => (
           <TouchableOpacity
             key={tab}
             onPress={() => setSelectedTab(tab)}
@@ -186,7 +205,6 @@ export default function WishList() {
         ))}
       </View>
 
-      {/* Modal */}
       <Modal visible={visible} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={closeSheet}>
           <View style={styles.overlay}>
@@ -194,7 +212,6 @@ export default function WishList() {
               <View style={styles.popup}>
                 <Text style={styles.popupText}>wish</Text>
 
-                {/* URL 입력 */}
                 <View style={styles.formGroup}>
                   <Text style={styles.label}>URL</Text>
                   <TextInput
@@ -229,7 +246,6 @@ export default function WishList() {
                   ))}
                 </View>
 
-                {/* 추가 버튼 */}
                 <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
                   <Text style={styles.addText}>add</Text>
                 </TouchableOpacity>
@@ -239,7 +255,6 @@ export default function WishList() {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* 위시리스트 목록 */}
       <FlatList
         data={filteredWishlist}
         keyExtractor={(item) => item.id?.toString() ?? Math.random().toString()}
@@ -338,10 +353,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#f0f0e5'
   },
-  categoryRow: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginBottom: 10,},
+  categoryRow: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginBottom: 10, },
   categoryButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, },
   categoryButtonSelected: { backgroundColor: "#b7aa93", borderWidth: 0, },
-  categoryText: {  },
+  categoryText: {},
   categoryTextSelected: { color: '#f0f0e5' },
   addButton: {
     backgroundColor: '#9c7866',
@@ -374,5 +389,5 @@ const styles = StyleSheet.create({
   tab: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: '#f0f0e5' },
   activeTab: { backgroundColor: "#f0f0e5" },
   tabText: { color: '#f0f0e5' },
-  activeTabText: { color: "#9c7866", fontWeight: 'bold' }
+  activeTabText: { color: "#9c7866", fontWeight: 'bold' },
 });

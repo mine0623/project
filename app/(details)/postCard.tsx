@@ -1,23 +1,49 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, Keyboard } from "react-native";
+import { View, Text, TouchableOpacity, Image, ScrollView, Keyboard, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import ImageViewing from "react-native-image-viewing";
 import { supabase } from "@/lib/supabase";
+import { create } from "zustand";
 
 interface PostCardProps {
   post: any;
   currentUser: any;
 }
 
+interface HeartState {
+  hearts: { [postId: string]: any[] };
+  setHearts: (postId: string, hearts: any[]) => void;
+}
+
+const useHeartStore = create<HeartState>((set) => ({
+  hearts: {},
+  setHearts: (postId, newHearts) =>
+    set((state: HeartState) => ({
+      hearts: {
+        ...state.hearts,
+        [postId]: newHearts || [],
+      },
+    })),
+}));
+
 export default function PostCard({ post, currentUser }: PostCardProps) {
   const [isViewerVisible, setIsViewerVisible] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
-  const [hearts, setHearts] = useState(post.hearts || []);
   const [wishImages, setWishImages] = useState<string[]>([]);
   const profile = post.profiles;
   const router = useRouter();
-  
+
+
+  const hearts = useHeartStore((state) => state.hearts[post.id] || []);
+  const setHearts = useHeartStore((state) => state.setHearts);
+
+  useEffect(() => {
+    if (post.hearts) {
+      setHearts(post.id, post.hearts);
+    }
+  }, [post.hearts]);
+
   useEffect(() => {
     const fetchWishImages = async () => {
       if (!Array.isArray(post.wishlist_ids) || post.wishlist_ids.length === 0) return;
@@ -37,9 +63,7 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           const images = wishes
             .map((w: any) =>
               w.image
-                ? supabase.storage
-                  .from("wishlist-images")
-                  .getPublicUrl(w.image).data?.publicUrl
+                ? supabase.storage.from("wishlist-images").getPublicUrl(w.image).data?.publicUrl
                 : null
             )
             .filter(Boolean) as string[];
@@ -88,10 +112,14 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
         .delete()
         .eq("post_id", post.id)
         .eq("user_id", currentUser.id);
-      setHearts(hearts.filter((h: any) => h.user_id !== currentUser.id));
+
+      setHearts(
+        post.id,
+        hearts.filter((h: any) => h.user_id !== currentUser.id)
+      );
     } else {
       await supabase.from("hearts").insert([{ post_id: post.id, user_id: currentUser.id }]);
-      setHearts([...hearts, { user_id: currentUser.id }]);
+      setHearts(post.id, [...hearts, { user_id: currentUser.id }]);
     }
   };
 
@@ -136,17 +164,19 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           {post.tags?.map((tag: string, index: number) => (
             <TouchableOpacity
               key={index}
-              onPress={() =>
+              onPress={() => {
+                Keyboard.dismiss(); // ✅ 키보드 내리기
                 router.push({
                   pathname: "/search",
                   params: { tag },
-                })
-              }
+                });
+              }}
             >
               <Text style={styles.tag}>#{tag}</Text>
             </TouchableOpacity>
           ))}
         </View>
+
 
         <View style={styles.icons}>
           <View style={styles.icon}>
@@ -161,7 +191,9 @@ export default function PostCard({ post, currentUser }: PostCardProps) {
           </View>
           <View style={styles.icon}>
             <Ionicons name="chatbox" size={27} color="#dfc8ba" />
-            <Text style={styles.count}>{Array.isArray(post.comments) ? post.comments.length : 0}</Text>
+            <Text style={styles.count}>
+              {Array.isArray(post.comments) ? post.comments.length : 0}
+            </Text>
           </View>
         </View>
 
