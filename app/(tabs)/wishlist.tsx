@@ -178,11 +178,8 @@ export default function WishList() {
   // 최종 탭 목록
   const tabs = ["전체", ...existingCategories];
 
-
-
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>wishlist</Text>
         <TouchableOpacity style={styles.addbutton} onPress={openSheet}>

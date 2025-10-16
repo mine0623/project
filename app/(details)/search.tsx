@@ -38,7 +38,7 @@ export default function Search() {
     useEffect(() => {
         if (tagQuery) {
             setSearchText(tagQuery);
-            Keyboard.dismiss(); // 키보드 내리기
+            Keyboard.dismiss();
         }
     }, [tagQuery]);
 
@@ -60,7 +60,6 @@ export default function Search() {
             }
         });
 
-        // ✅ 상위 5개만 선택하도록 변경
         const sortedTags = Object.entries(tagCount)
             .sort((a, b) => b[1] - a[1])
             .map(([tag]) => tag)
@@ -68,8 +67,6 @@ export default function Search() {
 
         setRecommendedTags(sortedTags);
     };
-
-
 
     const fetchPosts = async () => {
         try {
@@ -198,8 +195,8 @@ export default function Search() {
                             <TouchableOpacity
                                 key={index}
                                 onPress={() => {
-                                    Keyboard.dismiss();  // 키보드 내리기
-                                    setSearchText(tag);   // 검색어 설정
+                                    Keyboard.dismiss();
+                                    setSearchText(tag);
                                 }}
                             >
                                 <Text style={styles.tag}>{tag}</Text>
