@@ -69,65 +69,41 @@ export default function Search() {
     };
 
     const fetchPosts = async () => {
+        if (!searchText.trim()) {
+            setPosts([]);
+            return;
+        }
+
         try {
-            const { data: textData, error: textError } = await supabase
+            const { data, error } = await supabase
                 .from("posts")
                 .select(`
+                id,
+                title,
+                content,
+                tags,
+                images,
+                created_at,
+                profiles (
                     id,
-                    title,
-                    content,
-                    tags,
-                    images,
-                    created_at,
-                    profiles (
-                        id,
-                        name,
-                        gender,
-                        avatar_url,
-                        birth_year
-                    ),
-                    hearts (
-                        user_id
-                    ),
-                    comments (
-                        id
-                    )
-                `)
-                .or(`title.ilike.%${searchText}%,content.ilike.%${searchText}%`);
+                    name,
+                    gender,
+                    avatar_url,
+                    birth_year
+                ),
+                hearts (
+                    user_id
+                ),
+                comments (
+                    id
+                )
+            `)
+                .or(`title.ilike.%${searchText}%,content.ilike.%${searchText}%`)
+                .contains("tags", [searchText]); // 태그도 같이 조회
 
-            if (textError) throw textError;
+            if (error) throw error;
 
-            const { data: tagData, error: tagError } = await supabase
-                .from("posts")
-                .select(`
-                    id,
-                    title,
-                    content,
-                    tags,
-                    images,
-                    created_at,
-                    profiles (
-                        id,
-                        name,
-                        gender,
-                        avatar_url,
-                        birth_year
-                    ),
-                    hearts (
-                        user_id
-                    ),
-                    comments (
-                        id
-                    )
-                `)
-                .contains("tags", [searchText]);
-
-            if (tagError) throw tagError;
-
-            const combined = [...(textData ?? []), ...(tagData ?? [])];
-            const uniquePosts = Array.from(new Map(combined.map(p => [p.id, p])).values());
-
-            const formatted = uniquePosts.map((post: any) => ({
+            const formatted = (data ?? []).map((post: any) => ({
                 ...post,
                 profiles: post.profiles ?? null,
                 hearts: Array.isArray(post.hearts) ? post.hearts : [],
