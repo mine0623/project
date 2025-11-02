@@ -1,16 +1,14 @@
+import React, { useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
-    SafeAreaView,
-    View,
     Text,
-    TouchableOpacity,
     TextInput,
-    Keyboard,
-    KeyboardAvoidingView,
+    TouchableOpacity,
     TouchableWithoutFeedback,
+    Keyboard,
     StyleSheet
 } from "react-native";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function Login() {
@@ -37,7 +35,7 @@ export default function Login() {
             if (error.status === 400) {
                 setError("아이디나 비밀번호가 일치하지 않습니다.");
             } else {
-                setError("로그인 중 오류가 발생했습니다.");
+                setError("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
             }
             return;
         }
@@ -58,90 +56,88 @@ export default function Login() {
         }
     };
 
-
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-        >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <SafeAreaView style={styles.background}>
-                    <View style={styles.container}>
-                        <Text style={styles.text}>welcome to mine</Text>
-                        <View style={styles.inputs}>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="email"
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                onChangeText={setEmail}
-                                value={email}
-                                clearButtonMode="while-editing"
-                            />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="password"
-                                secureTextEntry
-                                autoCapitalize="none"
-                                onChangeText={setPassword}
-                                value={password}
-                                clearButtonMode="while-editing"
-                            />
-                        </View>
-                        {error ? <Text style={{ color: "rgba(240, 240, 229, 0.5)" }}>{error}</Text> : null}
-                        <TouchableOpacity onPress={onLogin}>
-                            <Text style={styles.loginButton}>Login</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push("/signup")}>
-                            <Text style={styles.signupButton}>Sign up</Text>
-                        </TouchableOpacity>
-                    </View>
-                </SafeAreaView>
-            </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <SafeAreaView style={styles.container}>
+                <Text style={styles.text}>mine</Text>
+                <TextInput
+                    style={
+                        styles.input}
+                    placeholder="이메일을 입력해주세요."
+                    placeholderTextColor='#f0f0e580'
+                    keyboardType="email-address"
+                    onChangeText={setEmail}
+                    value={email}
+                    clearButtonMode="while-editing"
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="비밀번호를 입력해주세요."
+                    placeholderTextColor='#f0f0e580'
+                    secureTextEntry
+                    onChangeText={setPassword}
+                    value={password}
+                    clearButtonMode="while-editing"
+                />
+                {error ? <Text style={styles.error}>{error}</Text> : null}
+                <TouchableOpacity onPress={onLogin}>
+                    <Text style={styles.loginButton}>Login</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push("/signup")}>
+                    <Text style={styles.signupButton}>mine 시작하기</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        </TouchableWithoutFeedback>
     );
 }
 
-
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-        backgroundColor: '#9c7866'
-    },
     container: {
-        marginHorizontal: 30,
-        marginTop: 100,
-        gap: 20,
+        flex: 1,
+        backgroundColor: '#9c7866',
+        paddingHorizontal: 30,
+        flexDirection: 'column',
+        paddingTop: 100,
+        gap: 10,
     },
     text: {
         color: '#f0f0e5',
-        fontSize: 30,
+        fontSize: 35,
+        textAlign: 'center',
         fontWeight: 'bold',
-    },
-    inputs: {
-        gap: 10,
+        marginBottom: 50,
     },
     input: {
         color: '#f0f0e5',
-        fontSize: 20,
-        borderWidth: 1,
-        borderColor: '#f0f0e5',
-        padding: 15,
+        borderWidth: 1.5,
+        borderRadius: 5,
+        borderColor: '#f0f0e580',
+        paddingHorizontal: 12,
+        paddingVertical: 15,
+        fontSize: 18,
+    },
+    error: {
+        color: "#f0f0e580"
     },
     loginButton: {
-        backgroundColor: '#f0f0e5',
         color: '#9c7866',
-        fontSize: 20,
+        backgroundColor: '#f0f0e5',
+        borderRadius: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 15,
+        fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',
-        padding: 16,
     },
     signupButton: {
         color: '#f0f0e5',
-        fontSize: 20,
-        fontWeight: 'bold',
-        borderWidth: 1,
         borderColor: '#f0f0e5',
+        borderWidth: 1.5,
+        borderRadius: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 15,
+        fontSize: 18,
+        fontWeight: 'bold',
         textAlign: 'center',
-        padding: 15,
     },
 })

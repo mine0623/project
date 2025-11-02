@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import PostCard from "@/app/(details)/postCard";
 import { useFocusEffect } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PostList() {
   const [selectedTab, setSelectedTab] = useState("전체");
@@ -169,22 +170,46 @@ export default function PostList() {
         onPress={() => router.push("/add-post")}
       >
         <Text style={styles.floatingText}>글쓰기</Text>
-        <Ionicons name="pencil" size={15} color="#9c7866" />
+        <Ionicons name="pencil" size={15} color="#f0f0e5" />
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#9c7866" },
-  header: { flexDirection: "row", justifyContent: "space-between", margin: 30, marginBottom: 10 },
+  container: {
+    flex: 1,
+    padding: 30,
+    backgroundColor: '#9c7866',
+    paddingBottom: 0,
+    flexDirection: 'column',
+    gap: 10,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold" },
-  tabContainer: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginLeft: 20, marginTop: 10 },
-  tabButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: '#f0f0e5' },
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    marginVertical: 10,
+    gap: 8,
+  },
+  tabButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#f0f0e5'
+  },
+  tabText: {
+    color: '#f0f0e5'
+  },
   tabButtonSelected: { backgroundColor: "#f0f0e5" },
-  tabText: { color: '#f0f0e5' },
   tabTextSelected: { color: "#9c7866", fontWeight: 'bold' },
-  sortContainer: { justifyContent: 'flex-end', flexDirection: "row", marginHorizontal: 30, marginVertical: 10, gap: 8, paddingVertical: 10 },
+  sortContainer: { justifyContent: 'flex-end', flexDirection: "row", gap: 8, },
   sortButton: {},
   sortSelected: {},
   sortText: { color: "rgba(240, 240, 229, 0.5)", },
@@ -192,16 +217,16 @@ const styles = StyleSheet.create({
   floatingTextButton: {
     flexDirection: 'row',
     position: "absolute",
-    bottom: 40,
+    bottom: 50,
     alignSelf: "center",
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: "#f0f0e5",
+    paddingVertical: 12,
+    backgroundColor: "#b7aa93",
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     gap: 5,
   },
-  floatingText: { fontSize: 16, color: "#9c7866" },
+  floatingText: { fontSize: 16, color: "#f0ffe5" },
 });
 

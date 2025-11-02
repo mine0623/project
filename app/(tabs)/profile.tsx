@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
-    SafeAreaView,
     View,
     Text,
     Image,
@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import PostCard from "@/app/(details)/postCard";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function Profile() {
     const [profile, setProfile] = useState<any | null>(null);
@@ -385,7 +386,7 @@ export default function Profile() {
             <View style={styles.header}>
                 <Text style={styles.logo}>profile</Text>
                 <TouchableOpacity onPress={confirmLogout} style={styles.logoutButton}>
-                    <Text style={styles.logout}>로그아웃</Text>
+                    <Text style={styles.logout}>logout</Text>
                 </TouchableOpacity>
             </View>
 
@@ -421,12 +422,30 @@ export default function Profile() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#9c7866" },
-    header: { margin: 30, marginBottom: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    container: {
+        flex: 1,
+        padding: 30,
+        backgroundColor: '#9c7866',
+        paddingBottom: 0,
+        flexDirection: 'column',
+        gap: 10,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
     logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold" },
+    logout: {
+        color: '#9c7866',
+        backgroundColor: '#f0f0e5',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
     logoutButton: { padding: 5 },
     error: { margin: 'auto', color: '#f0f0e5' },
-    card: { marginVertical: 20, marginHorizontal: 30, backgroundColor: 'rgba(240, 240, 229, 0.1)', borderRadius: 8, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 15, paddingHorizontal: 20 },
+    card: { marginTop: 20, backgroundColor: '#b7aa93', borderRadius: 20, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 20, paddingHorizontal: 20 },
     name: { fontSize: 20, fontWeight: "bold", color: '#f0f0e5' },
     summary: { fontSize: 18, color: '#f0f0e5', marginTop: 4 },
     avatar: { width: 100, height: 100, borderRadius: 60 },
@@ -438,44 +457,34 @@ const styles = StyleSheet.create({
     tabTextSelected: { color: '#f0f0e5ff' },
     content: { flex: 1 },
     scene: { flex: 1 },
-    logout: {
-        color: '#9c7866',
-        fontWeight: 'bold',
-        backgroundColor: '#f0f0e5',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-    },
     underline: { borderBottomWidth: 1, borderColor: "#f0f0e580", marginTop: 10 },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
     loadingText: { color: "#f0f0e5", },
+
     voteCard: {
-        borderRadius: 8,
+
+        borderRadius: 12,
         padding: 15,
-        paddingBottom: 20,
-        marginTop: 20,
-        marginVertical: 10,
-        marginHorizontal: 20,
-        backgroundColor: 'rgba(240, 240, 229, 0.1)'
+        backgroundColor: 'rgba(240, 240, 229, 0.1)',
+        gap: 10,
     },
-    voteDate: { marginHorizontal: 5, marginBottom: 10, color: "#f0f0e5", fontSize: 20 },
-    deleteButton: { marginHorizontal: 20, backgroundColor: "#b7aa93", padding: 10, borderRadius: 12, marginTop: 10 },
+    voteDate: { marginBottom: 10, color: "#f0f0e5", fontSize: 20 },
+    deleteButton: { backgroundColor: "#b7aa93", paddingVertical: 12, borderRadius: 15, marginTop: 10 },
     deleteButtonText: { color: "#f0f0e5", textAlign: "center", fontWeight: "bold" },
     resultsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginHorizontal: 10,
     },
     choiceBox: { alignItems: "center", flex: 1 },
     singleChoiceRow: {
         flexDirection: "row",
         justifyContent: 'space-between',
-        marginHorizontal: 20,
         gap: 20,
     },
     singleChoiceResults: {
         justifyContent: "center",
+        marginLeft: 25,
     },
     voteImage: {
         width: 120,

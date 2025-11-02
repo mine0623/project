@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-    SafeAreaView,
     View,
     Text,
     TouchableOpacity,
@@ -12,6 +11,7 @@ import {
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import { SafeAreaView } from "react-native-safe-area-context";
 import PostCard from "./postCard";
 
 export default function Search() {
@@ -175,7 +175,7 @@ export default function Search() {
                                     setSearchText(tag);
                                 }}
                             >
-                                <Text style={styles.tag}>{tag}</Text>
+                                <Text style={styles.tag}>#{tag}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -200,27 +200,37 @@ export default function Search() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#9c7866" },
-    header: { flexDirection: "row", justifyContent: "space-between", margin: 30 },
+    container: {
+        flex: 1,
+        padding: 30,
+        backgroundColor: '#9c7866',
+        paddingBottom: 0,
+        flexDirection: 'column',
+        gap: 10,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
     searchBox: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "rgba(240, 240, 229, 0.2)",
-        marginHorizontal: 25,
         borderRadius: 30,
         paddingHorizontal: 15,
-        paddingVertical: 10,
+        paddingVertical: 12,
     },
     searchInput: { flex: 1, color: "#f0f0e5", fontSize: 16 },
-    recommend: { gap: 10, marginHorizontal: 30, marginTop: 30 },
+    recommend: { gap: 10, marginTop: 30 },
     recommendText: { color: "#f0f0e5", fontSize: 20, fontWeight: "bold" },
-    tags: { flexDirection: "row", justifyContent: "flex-start", gap: 8, alignItems: "center" },
+    tags: { flexDirection: "row", gap: 8, marginTop: 5 },
     tag: {
+        backgroundColor: "#bda08b",
+        paddingHorizontal: 12,
+        paddingVertical: 10,
         color: "#f0f0e5",
-        fontSize: 15,
-        backgroundColor: "rgba(240, 240, 229, 0.3)",
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        borderRadius: 30,
+        borderRadius: 20,
     },
 });

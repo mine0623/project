@@ -40,7 +40,7 @@ export default function AddVote() {
       const { data, error } = await supabase
         .from("wishlist")
         .select("*")
-        .eq("user_id", user.id) // ✅ 현재 로그인한 사용자만
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -137,7 +137,6 @@ export default function AddVote() {
                   )}
                 </TouchableOpacity>
 
-                {/* 박스 바깥에 정보 표시 */}
                 {selectedWishlist[0]?.image && (
                   <View style={styles.boxTextContainer}>
                     <Text
@@ -183,8 +182,6 @@ export default function AddVote() {
                         <Ionicons name="add-sharp" size={25} color="#f0f0e5" />
                       )}
                     </TouchableOpacity>
-
-                    {/* 박스 바깥에 정보 표시 */}
                     {selectedWishlist[index]?.image && (
                       <View style={styles.boxTextContainer}>
                         <Text

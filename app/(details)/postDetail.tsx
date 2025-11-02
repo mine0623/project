@@ -142,7 +142,7 @@ export default function PostDetail() {
         <ScrollView style={{ flex: 1 }}>
           <PostCard post={currentPost} currentUser={currentUser} />
 
-          <View style={styles.commentsContainer}>
+          <View>
             <Text style={styles.commentHeader}>댓글</Text>
             {currentPost.comments?.map((c: any, idx: number) => (
               <View key={idx} style={styles.commentItem}>
@@ -164,7 +164,7 @@ export default function PostDetail() {
         <View style={styles.commentInputContainer}>
           <TextInput
             style={styles.commentInput}
-            placeholder="댓글을 입력하세요..."
+            placeholder="댓글을 입력하세요."
             placeholderTextColor="#f0f0e5"
             value={newComment}
             onChangeText={setNewComment}
@@ -181,16 +181,25 @@ export default function PostDetail() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#9c7866" },
-  header: { flexDirection: "row", justifyContent: "space-between", margin: 30, marginBottom: 10 },
-  commentsContainer: { marginHorizontal: 20 },
+  container: {
+    flex: 1,
+    padding: 30,
+    backgroundColor: '#9c7866',
+    paddingBottom: 0,
+    flexDirection: 'column',
+    gap: 10,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   commentHeader: { fontSize: 25, fontWeight: "bold", color: "#f0f0e5", marginVertical: 20 },
   commentItem: { flexDirection: "row", justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 10 },
   commentName: { fontWeight: "bold", color: "#f0f0e5", fontSize: 16 },
   commentText: { color: "#f0f0e5", fontSize: 15 },
-  commentInputContainer: { borderRadius: 30, marginHorizontal: 20, marginVertical: 10, backgroundColor: '#b7aa93',flexDirection: "row", alignItems: "center", paddingVertical: 20, paddingHorizontal: 25, },
-  heart: { flexDirection: 'column', alignItems: 'center' },
-  count: { color: '#f0f0e5' },
+  commentInputContainer: { borderRadius: 30, marginVertical: 10, backgroundColor: '#b7aa93', flexDirection: "row", alignItems: "center", paddingVertical: 20, paddingHorizontal: 25, },
   time: { color: "rgba(240, 240, 229, 0.5)" },
   commentInput: { flex: 1, color: "#f0f0e5", fontSize: 16 },
   commentAvatar: { width: 35, height: 35, borderRadius: 50 },

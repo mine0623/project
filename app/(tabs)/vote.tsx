@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-    SafeAreaView,
     View,
     Text,
     TouchableOpacity,
@@ -12,6 +11,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Vote {
     id: string;
@@ -402,17 +402,29 @@ export default function VoteViewer() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#9c7866", },
-    header: { flexDirection: "column", justifyContent: "space-between", margin: 30, gap: 10, },
+    container: {
+        flex: 1,
+        padding: 30,
+        backgroundColor: '#9c7866',
+        paddingBottom: 0,
+        flexDirection: 'column',
+        gap: 10,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
     logo: { color: "#f0f0e5", fontSize: 30, fontWeight: "bold" },
-    main: { alignItems: "center", justifyContent: "center", paddingBottom: 80 },
+    main: { alignItems: "center", justifyContent: "center", },
     title: {
-        color: "#9c7866",
+        color: "#f0f0e5",
         fontSize: 20,
-        fontWeight: "700",
+        fontWeight: 500,
         textAlign: "center",
         marginBottom: 10,
-        backgroundColor: "#f0f0e5",
+        backgroundColor: "#b7aa93",
         paddingHorizontal: 18,
         paddingVertical: 10,
         borderRadius: 30,
@@ -422,7 +434,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         gap: 15,
-        marginVertical: 10,
+        marginVertical: 20,
     },
     voteBox: {
         alignItems: "center",
@@ -441,10 +453,12 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 18,
         color: '#f0f0e5',
+        marginVertical: 10,
     },
     choiceContainer: {
         flexDirection: "row",
         justifyContent: "center",
+        alignItems: 'center',
         gap: 15,
     },
     choiceBox: {
@@ -462,14 +476,14 @@ const styles = StyleSheet.create({
         backgroundColor: "#f0f0e5",
         padding: 15,
         borderRadius: 10,
-        marginTop: 20,
+        marginTop: 10,
         alignSelf: "center",
     },
-    buttonText: { color: "#9c7866", fontWeight: "bold", textAlign: "center" },
+    buttonText: { color: "#9c7866", fontWeight: 500, textAlign: "center" },
     floatingTextButton: {
         flexDirection: "row",
         position: "absolute",
-        bottom: 40,
+        bottom: 100,
         alignSelf: "center",
         paddingHorizontal: 20,
         paddingVertical: 10,

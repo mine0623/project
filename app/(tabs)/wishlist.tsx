@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   TextInput,
   Modal,
+  ScrollView,
   TouchableOpacity,
   Animated,
   Image,
@@ -17,6 +17,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const screenHeight = Dimensions.get('window').height;
 const MAX_HEIGHT = screenHeight * 0.8;
@@ -38,6 +39,7 @@ export default function WishList() {
   const [product, setProduct] = useState<ProductType | null>(null);
   const [wishlist, setWishlist] = useState<ProductType[]>([]);
   const [selectedTab, setSelectedTab] = useState("전체");
+  const [sortOption, setSortOption] = useState<"latest" | "priceHigh" | "priceLow">("latest");
   const slideAnim = useRef(new Animated.Value(MAX_HEIGHT)).current;
 
   useFocusEffect(
@@ -66,16 +68,13 @@ export default function WishList() {
 
   const fetchProductInfo = async () => {
     if (!link.trim()) return null;
-
     try {
-      const res = await fetch('http://172.30.1.61:3000/parse-link', {  // ← URL 수정 필요
+      const res = await fetch('http://172.30.1.79:3000/parse-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: link }),
       });
-
       const data = await res.json();
-
       const newProduct = {
         store: data.source || 'unknown',
         brand: data.brand || null,
@@ -83,7 +82,6 @@ export default function WishList() {
         price: data.price?.toString() || '',
         image: data.image || null,
       };
-
       setProduct(newProduct);
       return newProduct;
     } catch (error) {
@@ -93,30 +91,21 @@ export default function WishList() {
   };
 
   const handleAdd = async () => {
-    // URL이 없으면 return
     if (!link.trim()) {
       alert("URL을 입력해주세요.");
       return;
     }
-
-    // 크롤링해서 상품 정보 가져오기
     const newProduct = await fetchProductInfo();
-
     if (!newProduct) {
       alert("상품 정보를 가져오지 못했습니다. URL을 확인해주세요.");
       return;
     }
-
-    // 카테고리 선택 여부 체크
     if (!product?.category) {
       alert("카테고리를 선택해주세요.");
       return;
     }
-
-    // Supabase에 저장
     await handleAddToSupabase({ ...newProduct, url: link, category: product.category });
   };
-
 
   const handleAddToSupabase = async (productToAdd: ProductType & { url?: string }) => {
     if (!productToAdd) return;
@@ -133,7 +122,8 @@ export default function WishList() {
     const { data: insertedData, error } = await supabase
       .from('wishlist')
       .insert([{ store, brand, name, price, image, url, category, user_id: userId }])
-      .select();
+      .select()
+      .order('created_at', { ascending: false }); // 최신순
 
     if (!error && insertedData) {
       setWishlist(prev => [insertedData[0], ...prev]);
@@ -163,19 +153,24 @@ export default function WishList() {
     fetchWishlist();
   }, []);
 
-  const filteredWishlist = wishlist.filter(item =>
+  // 탭 필터링
+  let filteredWishlist = wishlist.filter(item =>
     selectedTab === "전체" ? true : item.category === selectedTab
   );
 
-  // 고정된 카테고리 순서
-  const fixedOrder = ["상의", "하의", "신발", "악세사리"];
+  // 정렬 적용
+  if (sortOption === "latest") {
+    filteredWishlist.sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+  } else if (sortOption === "priceHigh") {
+    filteredWishlist.sort((a, b) => Number(b.price) - Number(a.price));
+  } else if (sortOption === "priceLow") {
+    filteredWishlist.sort((a, b) => Number(a.price) - Number(b.price));
+  }
 
-  // wishlist에 실제로 존재하는 카테고리만 필터링
+  const fixedOrder = ["상의", "하의", "신발", "가방", "악세사리"];
   const existingCategories = fixedOrder.filter(cat =>
     wishlist.some(item => item.category === cat)
   );
-
-  // 최종 탭 목록
   const tabs = ["전체", ...existingCategories];
 
   return (
@@ -202,27 +197,60 @@ export default function WishList() {
         ))}
       </View>
 
+      {/* 정렬 버튼 */}
+      <View style={styles.sortContainer}>
+        <TouchableOpacity
+          style={[styles.sortButton, sortOption === "latest" && styles.sortSelected]}
+          onPress={() => setSortOption("latest")}
+        >
+          <Text style={[styles.sortText, sortOption === "latest" && styles.sortTextSelected]}>
+            최신순
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.sortButton, sortOption === "priceHigh" && styles.sortSelected]}
+          onPress={() => setSortOption("priceHigh")}
+        >
+          <Text style={[styles.sortText, sortOption === "priceHigh" && styles.sortTextSelected]}>
+            가격 높은 순
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.sortButton, sortOption === "priceLow" && styles.sortSelected]}
+          onPress={() => setSortOption("priceLow")}
+        >
+          <Text style={[styles.sortText, sortOption === "priceLow" && styles.sortTextSelected]}>
+            가격 낮은 순
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <Modal visible={visible} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={closeSheet}>
           <View style={styles.overlay}>
             <TouchableWithoutFeedback>
               <View style={styles.popup}>
                 <Text style={styles.popupText}>wish</Text>
-
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>URL</Text>
+                <View>
+                  <Text style={{ marginBottom: 10 }}>상품 URL</Text>
                   <TextInput
                     style={styles.input}
                     value={link}
+                    clearButtonMode="while-editing"
                     onChangeText={setLink}
                     autoCapitalize="none"
                   />
                 </View>
 
-                {/* 카테고리 선택 */}
-                <Text style={styles.label}>카테고리</Text>
-                <View style={styles.categoryRow}>
-                  {["상의", "하의", "신발", "악세사리"].map((cat) => (
+                <Text>카테고리</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.categoryRow}
+                >
+                  {["상의", "하의", "신발", "가방", "악세사리"].map((cat) => (
                     <TouchableOpacity
                       key={cat}
                       style={[
@@ -241,7 +269,7 @@ export default function WishList() {
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </View>
+                </ScrollView>
 
                 <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
                   <Text style={styles.addText}>add</Text>
@@ -255,7 +283,7 @@ export default function WishList() {
       <FlatList
         data={filteredWishlist}
         keyExtractor={(item) => item.id?.toString() ?? Math.random().toString()}
-        contentContainerStyle={{ padding: 20 }}
+        contentContainerStyle={{ paddingHorizontal: 5 }}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.wishItem}
@@ -280,9 +308,6 @@ export default function WishList() {
                 {item.name}
               </Text>
               <Text>{item.price}원</Text>
-              <Text>
-                #{item.category}
-              </Text>
             </View>
           </TouchableOpacity>
         )}
@@ -294,13 +319,16 @@ export default function WishList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#9c7866",
+    padding: 30,
+    backgroundColor: '#9c7866',
+    paddingBottom: 0,
+    flexDirection: 'column',
+    gap: 10,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    margin: 30,
-    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   logo: {
     color: "#f0f0e5",
@@ -312,53 +340,88 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f0f0e5',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 8,
     borderRadius: 20,
   },
   addtext: {
     color: '#9c7866',
     fontSize: 15,
   },
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    marginVertical: 10,
+    gap: 8,
+  },
+  tab: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#f0f0e5'
+  },
+  tabText: {
+    color: '#f0f0e5'
+  },
+  activeTab: {
+    backgroundColor: "#f0f0e5"
+  },
+  activeTabText: {
+    color: "#9c7866",
+    fontWeight: 'bold'
+  },
+  sortContainer: { justifyContent: 'flex-end', flexDirection: "row", gap: 8, marginVertical: 8, },
+  sortButton: {},
+  sortSelected: {},
+  sortText: { color: "rgba(240, 240, 229, 0.5)", },
+  sortTextSelected: { color: '#f0f0e5' },
+  categoryRow: {
+    gap: 8,
+  },
+  categoryButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  categoryButtonSelected: {
+    backgroundColor: "#b7aa93"
+  },
+  categoryText: {},
+  categoryTextSelected: {
+    color: '#f0f0e5',
+  },
   overlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)'
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   popup: {
     width: '85%',
     maxHeight: '80%',
     backgroundColor: '#f0f0e5',
-    borderRadius: 12,
+    borderRadius: 15,
     padding: 20,
+    gap: 10,
   },
   popupText: {
     fontSize: 20,
-    marginBottom: 5
-  },
-  formGroup: {
-    marginBottom: 15
   },
   label: {
     fontSize: 15,
-    marginVertical: 10
   },
   input: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 10,
     fontSize: 16,
     backgroundColor: '#f0f0e5'
   },
-  categoryRow: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginBottom: 10, },
-  categoryButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, },
-  categoryButtonSelected: { backgroundColor: "#b7aa93", borderWidth: 0, },
-  categoryText: {},
-  categoryTextSelected: { color: '#f0f0e5' },
   addButton: {
     backgroundColor: '#9c7866',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 20,
   },
   addText: {
     color: '#f0f0e5',
@@ -367,24 +430,19 @@ const styles = StyleSheet.create({
   },
   wishItem: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(240, 240, 229, 0.5)',
+    backgroundColor: '#f0f0e580',
     borderRadius: 10,
     padding: 10,
     marginBottom: 15,
     alignItems: 'center'
   },
   item: {
-    marginLeft: 10,
-    gap: 4,
+    marginHorizontal: 10,
+    gap: 5,
   },
   wishImage: {
     width: 80,
     height: 80,
-    borderRadius: 10
+    borderRadius: 12
   },
-  tabContainer: { flexDirection: "row", justifyContent: "flex-start", gap: 10, marginHorizontal: 20, marginTop: 10 },
-  tab: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: '#f0f0e5' },
-  activeTab: { backgroundColor: "#f0f0e5" },
-  tabText: { color: '#f0f0e5' },
-  activeTabText: { color: "#9c7866", fontWeight: 'bold' },
 });

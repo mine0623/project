@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { SafeAreaView, View, Text, Image, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { supabase } from '@/lib/supabase';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Wish() {
     const params = useLocalSearchParams();
@@ -39,23 +40,31 @@ export default function Wish() {
     }
 
     const handleDelete = async () => {
-        if (!product?.id) {
-            console.error('삭제할 아이디가 없습니다.');
-            return;
-        }
+        Alert.alert("위시 삭제", "정말 삭제하시겠습니까?", [
+            { text: "취소", style: "cancel" },
+            {
+                text: "확인",
+                onPress: async () => {
+                    if (!product?.id) {
+                        console.error('삭제할 아이디가 없습니다.');
+                        return;
+                    }
 
-        const id = product.id;
+                    const id = product.id;
 
-        const { error } = await supabase
-            .from('wishlist')
-            .delete()
-            .eq('id', id);
+                    const { error } = await supabase
+                        .from('wishlist')
+                        .delete()
+                        .eq('id', id);
 
-        if (error) {
-            console.error('삭제 실패:', error);
-        } else {
-            router.back();
-        }
+                    if (error) {
+                        console.error('삭제 실패:', error);
+                    } else {
+                        router.back();
+                    }
+                },
+            },
+        ]);
     };
     return (
         <SafeAreaView style={styles.container}>
@@ -88,27 +97,30 @@ export default function Wish() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        padding: 30,
         backgroundColor: '#9c7866',
+        paddingBottom: 0,
+        flexDirection: 'column',
+        gap: 30,
     },
     info: {
         margin: 'auto',
         color: '#f0f0e5'
     },
     header: {
-        margin: 30,
         flexDirection: 'row',
-    },
-    image: {
-        marginBottom: 20,
-        width: 250,
-        height: 250,
-        borderRadius: 10,
     },
     main: {
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        gap: 7,
+        gap: 10,
+    },
+    image: {
+        width: 250,
+        height: 250,
+        borderRadius: 15,
+        marginBottom: 20,
     },
     text: {
         color: '#f0f0e5',
@@ -121,19 +133,18 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     buttons: {
-        marginHorizontal: 20,
         marginVertical: 20,
         flexDirection: 'row',
         justifyContent: 'space-around'
     },
     sumitbutton: {
         fontSize: 20,
+        color: '#9c7866',
         backgroundColor: '#f0f0e5',
         paddingHorizontal: 50,
         paddingVertical: 15,
         borderRadius: 30,
     },
-
     sumitButton: {
         fontSize: 20,
         color: '#f0f0e5',

@@ -1,17 +1,15 @@
-import { supabase } from "@/lib/supabase";
-import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { 
-    SafeAreaView, 
-    View, 
-    Text, 
-    TextInput, 
-    TouchableOpacity, 
-    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
     Keyboard,
-    KeyboardAvoidingView,
-    TouchableWithoutFeedback
+    StyleSheet
 } from "react-native";
+import { useRouter } from "expo-router";
+import { supabase } from "@/lib/supabase";
 
 export default function Signup() {
     const [email, setEmail] = useState("");
@@ -66,94 +64,91 @@ export default function Signup() {
 
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-        >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <SafeAreaView style={styles.background}>
-                    <View style={styles.container}>
-                        <Text style={styles.text}>Sign up</Text>
-                        <View style={styles.tool}>
-                            <Text style={styles.inputText}>email</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="email"
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                onChangeText={(text) => setEmail(text)}
-                                value={email}
-                                clearButtonMode="while-editing"
-                            />
-                        </View>
-                        <View style={styles.tool}>
-                            <Text style={styles.inputText}>password</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="password"
-                                secureTextEntry
-                                onChangeText={(text) => setPassword(text)}
-                                value={password}
-                                clearButtonMode="while-editing"
-                            />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Please enter again"
-                                secureTextEntry
-                                onChangeText={(text) => setPasswordConfirm(text)}
-                                value={passwordConfirm}
-                                clearButtonMode="while-editing"
-                            />
-                            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                        </View>
-                        <TouchableOpacity onPress={onSignUpPress}>
-                            <Text style={styles.button}>sign up</Text>
-                        </TouchableOpacity>
-                    </View>
-                </SafeAreaView>
-            </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <SafeAreaView style={styles.container}>
+                <Text style={styles.title}>Sign up</Text>
+                <Text style={styles.text}>email</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="이메일을 입력해주세요."
+                    placeholderTextColor='#f0f0e580'
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    onChangeText={(text) => setEmail(text)}
+                    value={email}
+                    clearButtonMode="while-editing"
+                />
+                <Text style={styles.text}>password</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="비밀번호를 입력해주세요."
+                    placeholderTextColor='#f0f0e580'
+                    secureTextEntry
+                    onChangeText={(text) => setPassword(text)}
+                    value={password}
+                    clearButtonMode="while-editing"
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="다시 입력해주세요."
+                    placeholderTextColor='#f0f0e580'
+                    secureTextEntry
+                    onChangeText={(text) => setPasswordConfirm(text)}
+                    value={passwordConfirm}
+                    clearButtonMode="while-editing"
+                />
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                <TouchableOpacity onPress={onSignUpPress}>
+                    <Text style={styles.signupButton}>회원가입</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        </TouchableWithoutFeedback>
     );
 }
 
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-        backgroundColor: '#9c7866'
-    },
     container: {
-        marginHorizontal: 30,
-        marginTop: 50,
-        gap: 30,
+        flex: 1,
+        padding: 40,
+        backgroundColor: '#9c7866',
+        paddingHorizontal: 30,
+        flexDirection: 'column',
+        gap: 10,
+    },
+    title: {
+        textAlign: 'center',
+        color: '#f0f0e5',
+        fontSize: 30,
+        fontWeight: 'bold',
+        marginVertical: 20,
     },
     text: {
         color: '#f0f0e5',
-        fontSize: 30,
-        fontWeight: 'bold'
-    },
-    inputText: {
-        color: '#f0f0e5',
         fontSize: 25,
         fontWeight: 'bold',
+        marginBottom: 12,
     },
     input: {
         color: '#f0f0e5',
-        fontSize: 20,
-        borderWidth: 1,
-        borderColor: '#f0f0e5',
-        padding: 15,
-    },
-    tool: {
-        gap: 10,
+        borderColor: '#f0f0e580',
+        borderWidth: 1.5,
+        borderRadius: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 15,
+        fontSize: 18,
     },
     errorText: {
         color: '#f0f0e5',
     },
-    button: {
-        backgroundColor: '#f0f0e5',
+    signupButton: {
         color: '#9c7866',
-        fontSize: 20,
+        backgroundColor: '#f0f0e5',
+        borderRadius: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 15,
+        fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',
-        padding: 16,
+        marginTop: 20
     },
 })

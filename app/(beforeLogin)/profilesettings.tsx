@@ -1,7 +1,6 @@
-import { useRouter } from "expo-router";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
-    SafeAreaView,
     View,
     Text,
     TouchableOpacity,
@@ -9,14 +8,14 @@ import {
     Image,
     StyleSheet,
     Keyboard,
-    KeyboardAvoidingView,
     TouchableWithoutFeedback,
-    Alert
+    Alert,
 } from "react-native";
+import { useRouter } from "expo-router";
+import { supabase } from "@/lib/supabase";
 import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
 import * as FileSystem from "expo-file-system";
-import { supabase } from "@/lib/supabase";
 import { decode as decodeBase64 } from "base64-arraybuffer";
 
 export default function Profilesettings() {
@@ -29,11 +28,11 @@ export default function Profilesettings() {
     const [day, setDay] = useState(1);
     const [isExistingProfile, setIsExistingProfile] = useState(false);
     const router = useRouter();
-    const genders = ["남자", "여자"];
 
-    const years = useMemo(() => Array.from({ length: 2025 - 1980 + 1 }, (_, i) => 1980 + i), []);
-    const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
-    const days = useMemo(() => Array.from({ length: new Date(year, month, 0).getDate() }, (_, i) => i + 1), [year, month]);
+    const genders = ["남자", "여자"];
+    const years = Array.from({ length: 2025 - 1980 + 1 }, (_, i) => 1980 + i);
+    const months = Array.from({ length: 12 }, (_, i) => i + 1);
+    const days = Array.from({ length: new Date(year, month, 0).getDate() }, (_, i) => i + 1);
 
     useEffect(() => {
         loadExistingProfile();
@@ -64,13 +63,20 @@ export default function Profilesettings() {
         if (!uri) return "application/octet-stream";
         const ext = uri.split(".").pop()?.toLowerCase();
         switch (ext) {
-            case "jpg": case "jpeg": return "image/jpeg";
-            case "png": return "image/png";
-            case "webp": return "image/webp";
-            case "heic": return "image/heic";
-            default: return "image/*";
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+            case "png":
+                return "image/png";
+            case "webp":
+                return "image/webp";
+            case "heic":
+                return "image/heic";
+            default:
+                return "image/*";
         }
     };
+
     const extFromMime = (mime: string) => {
         if (mime.includes("jpeg")) return "jpg";
         if (mime.includes("png")) return "png";
@@ -106,17 +112,18 @@ export default function Profilesettings() {
             const res = await fetch(uri);
             const ab = res.arrayBuffer ? await res.arrayBuffer() : await (await res.blob()).arrayBuffer();
             if (ab && ab.byteLength > 0) return ab;
-        } catch (e) { console.warn("fetch->arrayBuffer failed:", e); }
+        } catch { }
 
         if (fallbackBase64) {
-            try { return decodeBase64(fallbackBase64); }
-            catch (e) { console.warn("picker base64 decode failed:", e); }
+            try {
+                return decodeBase64(fallbackBase64);
+            } catch { }
         }
 
         try {
             const fsB64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
             return decodeBase64(fsB64);
-        } catch (e) { console.warn("fs base64 decode failed:", e); }
+        } catch { }
 
         throw new Error("이미지 바이트를 확보하지 못했습니다.");
     };
@@ -128,7 +135,6 @@ export default function Profilesettings() {
         if (userError || !user) return Alert.alert("로그인 필요", "로그인이 필요합니다.");
 
         const userEmail = user.email ?? "";
-
         let publicUrl: string | null = imageUri ?? null;
 
         if (imageUri?.startsWith("file://")) {
@@ -151,16 +157,18 @@ export default function Profilesettings() {
             }
         }
 
-        const { error: upsertError } = await supabase.from("profiles").upsert([{
-            id: user.id,
-            email: userEmail,
-            name,
-            gender: selectedGender ?? "공개하지 않음",
-            birth_year: year,
-            birth_month: month,
-            birth_day: day,
-            avatar_url: publicUrl,
-        }]);
+        const { error: upsertError } = await supabase.from("profiles").upsert([
+            {
+                id: user.id,
+                email: userEmail,
+                name,
+                gender: selectedGender,
+                birth_year: year,
+                birth_month: month,
+                birth_day: day,
+                avatar_url: publicUrl,
+            },
+        ]);
 
         if (upsertError) return Alert.alert("프로필 저장 실패", upsertError.message);
 
@@ -172,122 +180,129 @@ export default function Profilesettings() {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-        >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <SafeAreaView style={styles.background}>
-                    <View style={styles.container}>
-                        <Text style={styles.text}>Profilesettings</Text>
-                        <TouchableOpacity style={styles.profileImg} onPress={pickImage}>
-                            {imageUri ? (
-                                <Image source={{ uri: imageUri }} style={styles.profileImg} />
-                            ) : (
-                                <View style={styles.box}>
-                                    <Text style={styles.boxText}>image</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <SafeAreaView style={styles.container}>
+                <Text style={styles.text}>Profile settings</Text>
 
-                        <View style={styles.frame}>
-                            <Text style={styles.title}>name</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="name"
-                                onChangeText={(text) => { if (text.length <= 10) setName(text); }}
-                                value={name}
-                            />
+                <TouchableOpacity style={styles.profileImg} onPress={pickImage}>
+                    {imageUri ? (
+                        <Image source={{ uri: imageUri }} style={styles.profileImg} />
+                    ) : (
+                        <View style={styles.box}>
+                            <Text style={styles.boxText}>image</Text>
                         </View>
-                        <View style={styles.frame}>
-                            <Text style={styles.title}>gender</Text>
-                            <View style={styles.genders}>
-                                {genders.map((gender) => (
-                                    <TouchableOpacity
-                                        key={gender}
-                                        style={[styles.genderButton, selectedGender === gender && styles.selectedBackground]}
-                                        onPress={() => setSelectedGender(gender)}
-                                    >
-                                        <Text style={[styles.genderText, selectedGender === gender && styles.selectedTextColor]}>
-                                            {gender}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-                        <View>
-                            <Text style={styles.title}>생년월일</Text>
-                            <View style={styles.pickerContainer}>
-                                <Picker selectedValue={year} style={styles.year} onValueChange={(v) => setYear(v)}>
-                                    {years.map(y => <Picker.Item key={y} label={`${y}`} value={y} />)}
-                                </Picker>
-                                <Picker selectedValue={month} style={styles.month} onValueChange={(v) => setMonth(v)}>
-                                    {months.map(m => <Picker.Item key={m} label={`${m}`} value={m} />)}
-                                </Picker>
-                                <Picker selectedValue={day} style={styles.day} onValueChange={(v) => setDay(v)}>
-                                    {days.map(d => <Picker.Item key={d} label={`${d}`} value={d} />)}
-                                </Picker>
-                            </View>
-                        </View>
-                        <TouchableOpacity onPress={onFinish}>
-                            <Text style={styles.button}>완료</Text>
-                        </TouchableOpacity>
+                    )}
+                </TouchableOpacity>
+
+                <View style={styles.frame}>
+                    <Text style={styles.title}>이름</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="name"
+                        onChangeText={(text) => text.length <= 10 && setName(text)}
+                        value={name}
+                    />
+                </View>
+
+                <View style={styles.frame}>
+                    <Text style={styles.title}>성별</Text>
+                    <View style={styles.genders}>
+                        {genders.map((gender) => (
+                            <TouchableOpacity
+                                key={gender}
+                                style={[styles.genderButton, selectedGender === gender && styles.selectedBackground]}
+                                onPress={() => setSelectedGender(gender)}
+                            >
+                                <Text style={[styles.genderText, selectedGender === gender && styles.selectedTextColor]}>
+                                    {gender}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
                     </View>
-                </SafeAreaView>
-            </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+                </View>
+
+                <View>
+                    <Text style={styles.title}>생년월일</Text>
+                    <View style={styles.pickerContainer}>
+                        <Picker selectedValue={year} style={styles.year} onValueChange={setYear}>
+                            {years.map((y) => (
+                                <Picker.Item key={y} label={`${y}`} value={y} />
+                            ))}
+                        </Picker>
+                        <Picker selectedValue={month} style={styles.month} onValueChange={setMonth}>
+                            {months.map((m) => (
+                                <Picker.Item key={m} label={`${m}`} value={m} />
+                            ))}
+                        </Picker>
+                        <Picker selectedValue={day} style={styles.day} onValueChange={setDay}>
+                            {days.map((d) => (
+                                <Picker.Item key={d} label={`${d}`} value={d} />
+                            ))}
+                        </Picker>
+                    </View>
+                </View>
+
+                <TouchableOpacity onPress={onFinish}>
+                    <Text style={styles.button}>설정</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        </TouchableWithoutFeedback>
     );
 }
 
-
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-        backgroundColor: '#9c7866'
-    },
     container: {
-        marginHorizontal: 25,
-        marginTop: 25,
-        gap: 20,
+        flex: 1,
+        padding: 30,
+        backgroundColor: "#9c7866",
+        flexDirection: "column",
+        gap: 10,
     },
     box: {
-        backgroundColor: 'rgba(240, 240, 229, 0.2)',
-        width: '100%',
-        height: '100%',
+        backgroundColor: "rgba(240, 240, 229, 0.2)",
+        width: "100%",
+        height: "100%",
+        marginVertical: 10,
+        justifyContent: "center",
+        alignItems: "center",
     },
     boxText: {
-        margin: 'auto',
-        color: '#f0f0e5'
+        color: "#f0f0e5",
     },
     text: {
-        color: '#f0f0e5',
+        color: "#f0f0e5",
         fontSize: 30,
-        fontWeight: 'bold',
+        fontWeight: "bold",
     },
     title: {
-        color: '#f0f0e5',
+        color: "#f0f0e5",
         fontSize: 25,
-        fontWeight: 'bold',
+        fontWeight: "bold",
     },
     frame: {
         gap: 10,
+        marginBottom: 15,
     },
     profileImg: {
         width: 150,
         height: 150,
-        borderRadius: '100%',
+        borderRadius: 75,
         overflow: "hidden",
-        alignSelf: "center"
+        alignSelf: "center",
+        marginVertical: 10,
     },
     input: {
-        color: '#f0f0e5',
-        fontSize: 20,
-        borderWidth: 1,
-        borderColor: '#f0f0e5',
-        padding: 15,
+        color: "#f0f0e5",
+        borderColor: "#f0f0e580",
+        borderWidth: 1.5,
+        borderRadius: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 15,
+        fontSize: 18,
     },
     genders: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         gap: 10,
     },
     genderButton: {
@@ -295,14 +310,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: '#f0f0e5',
-
+        borderColor: "#f0f0e5",
     },
     selectedBackground: {
         backgroundColor: "#f0f0e5",
     },
     genderText: {
-        color: '#f0f0e5',
+        color: "#f0f0e5",
         fontSize: 18,
     },
     selectedTextColor: {
@@ -312,23 +326,18 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         height: 150,
     },
-    year: {
-        flex: 2,
-    },
-    month: {
-        flex: 1,
-    },
-    day: {
-        flex: 1,
-    },
+    year: { flex: 1 },
+    month: { flex: 1 },
+    day: { flex: 1 },
     button: {
-        marginTop: 30,
-        borderRadius: 8,
-        backgroundColor: '#f0f0e5',
-        color: '#9c7866',
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        padding: 18,
+        color: "#9c7866",
+        backgroundColor: "#f0f0e5",
+        borderRadius: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 15,
+        fontSize: 18,
+        fontWeight: "bold",
+        textAlign: "center",
+        marginTop: 20,
     },
-})
+});
